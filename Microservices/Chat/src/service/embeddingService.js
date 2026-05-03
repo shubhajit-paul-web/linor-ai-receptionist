@@ -1,5 +1,6 @@
 // src/service/embeddingService.js
 const { GoogleGenAI } = require("@google/genai");
+const logger = require("../utils/logger");
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -21,10 +22,10 @@ const generateEmbedding = async (text, maxRetries = 3) => {
       
     } catch (error) {
       attempt++;
-      console.warn(`⚠️ Embedding failed (Attempt ${attempt}/${maxRetries}):`, error.message);
+      logger.warn("Embedding failed (Attempt %s/%s): %s", attempt, maxRetries, error.message);
       
       if (attempt >= maxRetries) {
-        console.error("❌ Max retries reached for embedding.");
+        logger.error("Max retries reached for embedding.");
         throw new Error("Failed to generate embedding after multiple attempts.");
       }
       

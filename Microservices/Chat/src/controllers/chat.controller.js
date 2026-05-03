@@ -13,6 +13,7 @@ const {
   isInBookingFlow,
   handleBookingStep,
 } = require("../utils/bookingStateMachine");
+const logger = require("../utils/logger");
 
 const RATE_LIMIT = 20;
 const RATE_LIMIT_TTL = 60;
@@ -48,7 +49,7 @@ exports.chat = asyncHandler(async (req, res) => {
       });
     }
   } catch {
-    console.warn("Rate limit check failed — continuing");
+    logger.warn("Rate limit check failed — continuing");
   }
 
   // ── Step 1: Already in booking flow ───────────────────────
@@ -99,17 +100,16 @@ exports.chat = asyncHandler(async (req, res) => {
         score: r._score || 0,
       }));
 
-      console.log(`🔍 RAG found ${ragContext.length} relevant medical chunks`);
+      logger.info("RAG found %s relevant medical chunks", ragContext.length);
       if (ragContext[0]) {
-        console.log(
-          `Top match: ${ragContext[0].condition} (score: ${ragContext[0].score?.toFixed(3)})`,
+        logger.info(
+          "Top match: %s (score: %s)",
+          ragContext[0].condition,
+          ragContext[0].score?.toFixed(3),
         );
       }
     } catch (err) {
-      console.warn(
-        "Pinecone query failed — continuing without RAG:",
-        err.message,
-      );
+      logger.warn("Pinecone query failed — continuing without RAG: %s", err.message);
     }
   }
 
@@ -125,7 +125,7 @@ exports.chat = asyncHandler(async (req, res) => {
       faqs = faqData.data || [];
     }
   } catch {
-    console.warn("FAQ service unavailable");
+    logger.warn("FAQ service unavailable");
   }
 
   // ── Step 6: Build prompt with RAG context ─────────────────
@@ -153,7 +153,7 @@ exports.chat = asyncHandler(async (req, res) => {
   try {
     aiReply = await callAI(systemPrompt, recentHistory);
   } catch (err) {
-    console.error("AI error:", err.message);
+    logger.error("AI error: %s", err.message);
     aiReply = `I'm having trouble right now. Please call us at ${clinic.phone || "our clinic"} for immediate assistance.`;
   }
 
@@ -195,13 +195,13 @@ const saveAppointment = async (apiKey, user_id, sessionId, data) => {
 
     if (!response.ok) {
       const err = await response.text();
-      console.error("Appointment save failed:", response.status, err);
+      logger.error("Appointment save failed: %s %s", response.status, err);
       return;
     }
 
     const result = await response.json();
-    console.log("✅ Appointment saved:", result.data?._id);
+    logger.info("Appointment saved: %s", result.data?._id);
   } catch (err) {
-    console.error("Failed to save appointment:", err.message);
+    logger.error("Failed to save appointment: %s", err.message);
   }
 };

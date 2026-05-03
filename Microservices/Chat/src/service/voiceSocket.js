@@ -3,13 +3,14 @@ const fs = require("fs");
 const path = require("path");
 const { transcribeAudio } = require("../service/stt.service");
 const { streamTTS } = require("../service/tts.service");
+const logger = require("../utils/logger");
 
 // Import your EXISTING logic from chat.controller.js or a wrapper service
 // e.g., const { processVoiceChat } = require("../controller/chat.controller");
 
 exports.setupVoiceSockets = (io) => {
   io.on("connection", (socket) => {
-    console.log(`[Socket] Patient connected: ${socket.id}`);
+    logger.info("Patient connected: %s", socket.id);
 
     // Create a temporary file path for this specific session's audio chunks
     const tempFilePath = path.join(__dirname, `../temp/audio_${socket.id}.webm`);
@@ -27,7 +28,7 @@ exports.setupVoiceSockets = (io) => {
 
         // Emit transcript back to frontend for UI display
         socket.emit("transcript", { role: "user", text: patientText });
-        console.log(`[STT] Patient said: ${patientText}`);
+        logger.info("Patient said: %s", patientText);
 
         // 3. THE BRAIN: Pass text to your existing RAG/Gemini logic
         // Replace this mock with your actual intent detection and Gemini call
@@ -39,19 +40,19 @@ exports.setupVoiceSockets = (io) => {
         await streamTTS(socket, aiReplyText);
 
       } catch (error) {
-        console.error(`[Voice Pipeline Error]:`, error.message);
+        logger.error("Voice Pipeline Error: %s", error.message);
         socket.emit("error", "Failed to process voice request.");
       }
     });
 
     socket.on("stop-audio", () => {
-      console.log(`[Socket] Patient interrupted AI. Cutting stream.`);
+      logger.info("Patient interrupted AI. Cutting stream.");
       // In a more advanced setup, you'd send a signal to the TTS service to close its specific WebSocket
       socket.emit("interrupt-acknowledged"); 
     });
 
     socket.on("disconnect", () => {
-      console.log(`[Socket] Patient disconnected: ${socket.id}`);
+      logger.info("Patient disconnected: %s", socket.id);
       // Cleanup temp files if they exist
       if (fs.existsSync(tempFilePath)) {
         fs.unlinkSync(tempFilePath);
