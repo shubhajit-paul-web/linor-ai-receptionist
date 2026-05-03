@@ -3,14 +3,16 @@ import {
   ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import { RESOLUTION_DATA } from '../../lib/mockData';
+import { CHART_AXIS_COLOR, CHART_GRID_COLOR, CHART_TOOLTIP_STYLE } from './chartTokens';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   const rate = payload[0]?.value;
+  const ok = rate >= 80;
   return (
-    <div className="bg-surface border border-border rounded-md px-3 py-2 shadow-sm">
-      <p className="text-xs text-text-muted mb-1">{label}</p>
-      <p className={`text-sm font-semibold ${rate >= 80 ? 'text-success' : 'text-warning'}`}>
+    <div className="bg-surface border border-border-strong rounded-md px-3 py-2 shadow-md">
+      <p className="text-[11px] text-text-muted mb-0.5">{label}</p>
+      <p className={`text-[13px] font-semibold tabular-nums ${ok ? 'text-success' : 'text-warning'}`}>
         {rate}% resolved
       </p>
     </div>
@@ -19,40 +21,52 @@ function CustomTooltip({ active, payload, label }) {
 
 export function ResolutionLineChart() {
   return (
-    <div aria-label="AI resolution rate trend line chart" className="h-full">
+    <div aria-label="AI resolution rate trend" className="h-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={RESOLUTION_DATA} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <LineChart data={RESOLUTION_DATA} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+          <CartesianGrid stroke={CHART_GRID_COLOR} strokeDasharray="2 4" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+            stroke={CHART_AXIS_COLOR}
+            tick={{ fontSize: 10, fill: CHART_AXIS_COLOR }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
           />
           <YAxis
             domain={[60, 100]}
-            tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+            stroke={CHART_AXIS_COLOR}
+            tick={{ fontSize: 10, fill: CHART_AXIS_COLOR }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => `${v}%`}
+            width={32}
           />
-          <Tooltip content={<CustomTooltip />} />
-          {/* 80% threshold reference line */}
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: CHART_GRID_COLOR, strokeDasharray: '2 2' }}
+            contentStyle={CHART_TOOLTIP_STYLE}
+          />
+          {/* 80% target reference line */}
           <ReferenceLine
             y={80}
             stroke="var(--warning)"
             strokeDasharray="4 4"
-            strokeWidth={1.5}
-            label={{ value: 'Target 80%', position: 'insideTopRight', fontSize: 10, fill: 'var(--warning)' }}
+            strokeWidth={1.2}
+            label={{
+              value: 'Target 80%',
+              position: 'insideTopRight',
+              fontSize: 10,
+              fill: 'var(--warning)',
+            }}
           />
           <Line
             type="monotone"
             dataKey="rate"
             stroke="var(--success)"
-            strokeWidth={2}
+            strokeWidth={1.8}
             dot={false}
-            activeDot={{ r: 4, fill: 'var(--success)', stroke: 'var(--surface)', strokeWidth: 2 }}
+            activeDot={{ r: 3, fill: 'var(--success)', stroke: 'var(--surface)', strokeWidth: 2 }}
           />
         </LineChart>
       </ResponsiveContainer>

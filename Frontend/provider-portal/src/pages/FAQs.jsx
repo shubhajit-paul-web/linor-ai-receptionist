@@ -360,7 +360,7 @@ function FaqPanel({ editing, onClose }) {
           </button>
           <button
             type="submit"
-            className="flex-1 h-9 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
+            className="flex-1 h-9 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover transition-colors"
           >
             {editing ? "Save Changes" : "Add FAQ"}
           </button>
@@ -448,7 +448,7 @@ export default function FAQs() {
             setEditing(null);
             setPanelOpen(true);
           }}
-          className="h-9 px-4 flex items-center gap-2 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover transition-colors"
+          className="h-9 px-4 flex items-center gap-2 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover transition-colors"
         >
           <Plus size={16} />
           Add FAQ

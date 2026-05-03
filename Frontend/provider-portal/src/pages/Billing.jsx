@@ -130,7 +130,7 @@ export default function Billing() {
               onClick={() => setAnnual(true)}
               className={cn(
                 "px-5 py-2 rounded-full text-[14px] font-medium transition-all duration-300 relative flex items-center gap-2",
-                annual ? "bg-primary text-white shadow-md shadow-primary/25" : "text-text-muted hover:text-text-primary"
+                annual ? "bg-primary text-primary-on shadow-md shadow-primary/25" : "text-text-muted hover:text-text-primary"
               )}
             >
               Annually
@@ -158,7 +158,7 @@ export default function Billing() {
                 )}
               >
                 {isPopular && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white text-[12px] font-bold px-4 py-1 rounded-full flex items-center gap-1 shadow-md shadow-primary/30">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-on text-[12px] font-bold px-4 py-1 rounded-full flex items-center gap-1 shadow-md shadow-primary/30">
                     <Zap size={12} /> MOST POPULAR
                   </div>
                 )}
@@ -183,7 +183,7 @@ export default function Billing() {
                   className={cn(
                     "w-full py-3 px-4 rounded-xl text-[14px] font-semibold transition-all duration-300 flex items-center justify-center gap-2 mb-8",
                     isPopular 
-                      ? "bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary-hover hover:-translate-y-0.5" 
+                      ? "bg-primary text-primary-on shadow-lg shadow-primary/25 hover:bg-primary-hover hover:-translate-y-0.5" 
                       : "bg-surface-secondary text-text-primary border border-border hover:border-border-strong hover:bg-surface"
                   )}
                 >

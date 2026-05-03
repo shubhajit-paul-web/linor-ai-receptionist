@@ -501,7 +501,7 @@ export default function WidgetSettings() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-9 px-4 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover disabled:opacity-70 flex items-center gap-2"
+                className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-70 flex items-center gap-2"
               >
                 {isSubmitting ? <><Loader2 size={14} className="animate-spin" />Saving...</> : 'Save Changes'}
               </button>

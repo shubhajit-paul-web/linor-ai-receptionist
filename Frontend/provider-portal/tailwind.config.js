@@ -13,8 +13,11 @@ export default {
       // and raw CSS vars work together.
       colors: {
         background:       'var(--background)',
+        canvas:           'var(--background)',
         surface:          'var(--surface)',
         'surface-secondary': 'var(--surface-secondary)',
+        elevated:         'var(--surface-secondary)',
+        overlay:          'var(--surface-overlay)',
         border:           'var(--border)',
         'border-strong':  'var(--border-strong)',
 
@@ -22,11 +25,14 @@ export default {
         'text-primary':   'var(--text-primary)',
         'text-secondary': 'var(--text-secondary)',
         'text-muted':     'var(--text-muted)',
+        'text-tertiary':  'var(--text-muted)', // alias
 
         // Brand
         primary:          'var(--primary)',
         'primary-hover':  'var(--primary-hover)',
+        'primary-active': 'var(--primary-active)',
         'primary-light':  'var(--primary-light)',
+        'primary-on':     'var(--primary-on)',
 
         // Status
         success:          'var(--success)',
@@ -35,7 +41,19 @@ export default {
         'warning-light':  'var(--warning-light)',
         danger:           'var(--danger)',
         'danger-light':   'var(--danger-light)',
+        info:             'var(--info)',
+        'info-light':     'var(--info-light)',
         neutral:          'var(--neutral)',
+
+        // Chart palette
+        'chart-1': 'var(--chart-1)',
+        'chart-2': 'var(--chart-2)',
+        'chart-3': 'var(--chart-3)',
+        'chart-4': 'var(--chart-4)',
+        'chart-5': 'var(--chart-5)',
+        'chart-6': 'var(--chart-6)',
+        'chart-7': 'var(--chart-7)',
+        'chart-8': 'var(--chart-8)',
       },
 
       // ─── Typography ────────────────────────────────────────────
