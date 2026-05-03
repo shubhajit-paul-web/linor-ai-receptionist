@@ -35,6 +35,14 @@ export const DEFAULTS = {
     'Services offered',
     'Contact info',
   ],
+  // Voice mode — browser-native Speech API
+  enableVoice: true,           // show mic button (STT) when supported
+  enableTTS: true,             // allow toggling spoken replies (off by default)
+  ttsDefaultOn: false,         // initial TTS state
+  voiceLang: 'en-US',          // BCP-47 language tag for STT + TTS
+  // Subtle UI sound effects on send / receive / error
+  enableSounds: false,
+  soundVolume: 0.18,           // 0..1
 };
 
 /**
@@ -109,6 +117,13 @@ export function parseConfig(scriptEl) {
         .filter(Boolean)
         .slice(0, 4);
     }
+
+    // Voice / sound flags (boolean "false" disables; anything else enables)
+    if (get('enable-voice')   != null) attrCfg.enableVoice   = get('enable-voice')   !== 'false';
+    if (get('enable-tts')     != null) attrCfg.enableTTS     = get('enable-tts')     !== 'false';
+    if (get('tts-default-on') != null) attrCfg.ttsDefaultOn  = get('tts-default-on') !== 'false';
+    if (get('enable-sounds')  != null) attrCfg.enableSounds  = get('enable-sounds')  !== 'false';
+    if (get('voice-lang'))             attrCfg.voiceLang     = get('voice-lang');
   }
 
   // Merge priority: defaults < __AI_WIDGET_CONFIG__ < LinorConfig < data-* attrs

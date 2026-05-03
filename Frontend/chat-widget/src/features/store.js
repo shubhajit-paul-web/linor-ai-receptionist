@@ -83,7 +83,7 @@ export function createStore(initialState) {
  * @param {Array}  [persistedMessages=[]]
  * @returns {object}
  */
-export function createInitialState(sessionId, persistedMessages = []) {
+export function createInitialState(sessionId, persistedMessages = [], overrides = {}) {
   return {
     isOpen: false,
     messages: persistedMessages,
@@ -91,5 +91,14 @@ export function createInitialState(sessionId, persistedMessages = []) {
     error: null,
     sessionId,
     unreadCount: 0,
+    // Voice state
+    voiceState: 'idle',          // 'idle' | 'listening' | 'speaking' | 'error'
+    ttsEnabled: false,            // user-toggleable TTS (mirrors config.ttsDefaultOn)
+    interimTranscript: '',        // live STT preview (non-final)
+    sttSupported: false,
+    ttsSupported: false,
+    // Network
+    online: true,
+    ...overrides,
   };
 }

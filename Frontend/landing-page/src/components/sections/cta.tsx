@@ -28,12 +28,12 @@ export function CTASection() {
               Join thousands of businesses that trust Linor AI to handle their calls, capture leads, and grow their revenue.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto group shadow-[0_0_20px_rgba(147,51,234,0.4)]">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+              <Button size="lg" className="w-full sm:w-auto rounded-full bg-brand-600 hover:bg-brand-500 text-white border border-brand-500/50 shadow-[0_0_20px_rgba(139,92,246,0.3)] group transition-all">
                 Start Free Trial
                 <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto rounded-full font-medium bg-white/5 border-white/10 text-white hover:bg-white/10">
                 Talk to Sales
               </Button>
             </div>

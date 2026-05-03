@@ -13,6 +13,7 @@
 
 import { h, getInitials } from '../../utils/dom.js';
 import { announce } from '../../utils/a11y.js';
+import { ICON_SPARKLES, ICON_ARROW_DOWN } from '../../utils/icons.js';
 import { createBubble } from './bubble.js';
 import { createTypingIndicator } from './typing.js';
 import { createSuggestions } from './suggestions.js';
@@ -58,10 +59,23 @@ export function createMessages(store, bus, config) {
     ariaLabel: 'Quick start options',
   });
 
+  const welcomeTitle = h(
+    'div',
+    { class: 'messages-welcome__title' },
+    `Hi, I'm ${config.botName}`
+  );
+  const welcomeHint = h(
+    'div',
+    { class: 'messages-welcome__hint' },
+    h('span', { class: 'messages-welcome__hint-icon', html: ICON_SPARKLES }),
+    'AI Assistant'
+  );
   const welcomeEl = h(
     'div',
     { class: 'messages-welcome', 'aria-hidden': 'true' },
     welcomeAvatarEl,
+    welcomeHint,
+    welcomeTitle,
     h('p', { class: 'messages-welcome__text' }, config.welcomeMessage),
     starterChips.el
   );
@@ -73,6 +87,23 @@ export function createMessages(store, bus, config) {
   // ── Message list (virtual) ────────────────────────────────────────────────
 
   const listEl = h('div', { role: 'list', 'aria-label': 'Chat messages' });
+
+  // ── Scroll-to-bottom pill ─────────────────────────────────────────────────
+
+  const scrollBtnCount = h('span', { class: 'scroll-to-bottom__count' });
+  scrollBtnCount.setAttribute('hidden', '');
+
+  const scrollBtn = h(
+    'button',
+    {
+      type: 'button',
+      class: 'scroll-to-bottom',
+      'aria-label': 'Jump to latest message',
+    },
+    h('span', { class: 'scroll-to-bottom__icon', html: ICON_ARROW_DOWN, 'aria-hidden': 'true' }),
+    h('span', { class: 'scroll-to-bottom__label' }, 'Latest'),
+    scrollBtnCount
+  );
 
   // ── Root container ────────────────────────────────────────────────────────
 
@@ -86,6 +117,7 @@ export function createMessages(store, bus, config) {
     welcomeEl,
     listEl,
     typingEl,
+    scrollBtn,
     liveRegion
   );
 
@@ -96,12 +128,38 @@ export function createMessages(store, bus, config) {
 
   let isUserScrolled = false;
   let prevMessageCount = 0;
+  let unseenCount = 0;
+
+  function syncScrollPill() {
+    const show = isUserScrolled;
+    scrollBtn.classList.toggle('is-visible', show);
+    if (!show) unseenCount = 0;
+    updateScrollPillCount();
+  }
+
+  function updateScrollPillCount() {
+    if (unseenCount > 0) {
+      scrollBtnCount.textContent = unseenCount > 99 ? '99+' : String(unseenCount);
+      scrollBtnCount.removeAttribute('hidden');
+    } else {
+      scrollBtnCount.setAttribute('hidden', '');
+    }
+  }
 
   // Detect if user has manually scrolled up
   el.addEventListener('scroll', () => {
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const wasScrolled = isUserScrolled;
     isUserScrolled = distanceFromBottom > 60;
+    if (wasScrolled !== isUserScrolled) syncScrollPill();
   }, { passive: true });
+
+  scrollBtn.addEventListener('click', () => {
+    isUserScrolled = false;
+    unseenCount = 0;
+    scrollToBottom(true);
+    syncScrollPill();
+  });
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
 
@@ -167,11 +225,19 @@ export function createMessages(store, bus, config) {
 
       reconcile(state.messages);
 
-      // Auto-scroll when new messages arrive
+      // Auto-scroll when new messages arrive — BUT respect user's explicit
+      // scroll-up. Instead of yanking them back down, surface the scroll-pill
+      // with an unseen-counter so they can jump at will.
       const isNewMessage = state.messages.length > prevMessageCount;
       if (isNewMessage) {
-        isUserScrolled = false; // new message overrides user scroll
-        scrollToBottom(true);
+        if (isUserScrolled) {
+          const newMsgs = state.messages.slice(prevMessageCount);
+          const newAssistantMsgs = newMsgs.filter((m) => m.role === 'assistant').length;
+          unseenCount += newAssistantMsgs;
+          updateScrollPillCount();
+        } else {
+          scrollToBottom(true);
+        }
       }
       prevMessageCount = state.messages.length;
     }

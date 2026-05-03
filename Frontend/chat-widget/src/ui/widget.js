@@ -17,6 +17,9 @@
 
 import { createStore, createInitialState } from '../features/store.js';
 import { createSession } from '../features/session.js';
+import { createVoiceController } from '../features/voice.js';
+import { createSoundController } from '../features/sounds.js';
+import { createNetworkMonitor } from '../features/network.js';
 import { sendMessage } from '../api/chat.js';
 import { classifyError } from '../api/client.js';
 import { createEventBus } from '../utils/events.js';
@@ -28,11 +31,12 @@ import { widgetStyles }   from './styles/widget.css.js';
 import { messagesStyles } from './styles/messages.css.js';
 import { inputStyles }    from './styles/input.css.js';
 
-import { createLauncher }     from './components/launcher.js';
-import { createHeader }       from './components/header.js';
-import { createMessages }     from './components/messages.js';
-import { createInput }        from './components/input.js';
-import { createErrorBanner }  from './components/error.js';
+import { createLauncher }      from './components/launcher.js';
+import { createHeader }        from './components/header.js';
+import { createMessages }      from './components/messages.js';
+import { createInput }         from './components/input.js';
+import { createErrorBanner }   from './components/error.js';
+import { createOfflineBanner } from './components/offline.js';
 
 /**
  * Bootstrap the entire widget inside a Shadow DOM root.
@@ -62,11 +66,59 @@ export function createWidget(shadow, config) {
   // Attach sessionId to config so API calls can include it
   config.sessionId = sessionId;
 
-  // ── 3. Store ──────────────────────────────────────────────────────────────
+  // ── 3. Network monitor ────────────────────────────────────────────────────
+
+  const netMonitor = createNetworkMonitor();
+
+  // ── 4. Voice controller (STT + TTS) ───────────────────────────────────────
+
+  const voice = createVoiceController({
+    lang: config.voiceLang || 'en-US',
+    onResult: ({ text, isFinal }) => {
+      if (isFinal) {
+        store.setState({ interimTranscript: '' });
+        if (text) bus.emit('send', text);
+      } else {
+        store.setState({ interimTranscript: text });
+      }
+    },
+    onError: (err) => {
+      store.setState({
+        voiceState: 'idle',
+        interimTranscript: '',
+        error: { message: err.message, retryable: false, failedMessageId: null },
+      });
+    },
+    onStateChange: (vs) => {
+      // Clear interim once listening ends
+      if (vs !== 'listening') {
+        store.setState({ voiceState: vs, interimTranscript: '' });
+      } else {
+        store.setState({ voiceState: vs });
+      }
+    },
+  });
+
+  // ── 5. Sound controller ───────────────────────────────────────────────────
+
+  const sounds = createSoundController({
+    enabled: !!config.enableSounds,
+    volume: typeof config.soundVolume === 'number' ? config.soundVolume : 0.18,
+  });
+
+  // ── 6. Store ──────────────────────────────────────────────────────────────
 
   const store = createStore(
-    createInitialState(sessionId, persistedMessages)
+    createInitialState(sessionId, persistedMessages, {
+      sttSupported: voice.sttSupported,
+      ttsSupported: voice.ttsSupported,
+      ttsEnabled:   voice.ttsSupported && config.enableTTS !== false && !!config.ttsDefaultOn,
+      online:       netMonitor.isOnline(),
+    })
   );
+
+  // Keep the voice controller mute state in sync with store.ttsEnabled.
+  voice.setMuted(!store.getState().ttsEnabled);
 
   // Persist on every state change (debounced)
   let persistTimer = null;
@@ -77,15 +129,23 @@ export function createWidget(shadow, config) {
     }, 300);
   });
 
-  // ── 4. Event bus ──────────────────────────────────────────────────────────
+  // ── 7. Network → store sync ───────────────────────────────────────────────
+
+  const unsubscribeNet = netMonitor.subscribe((online) => {
+    store.setState({ online });
+  });
+
+  // ── 8. Event bus ──────────────────────────────────────────────────────────
 
   const bus = createEventBus();
 
-  // ── 5. Create components ───────────────────────────────────────────────────
+  // ── 9. Create components ──────────────────────────────────────────────────
 
   const { el: launcherEl } = createLauncher(store, bus, config);
 
-  const { el: headerEl } = createHeader(bus, config);
+  const { el: headerEl, destroy: destroyHeader } = createHeader(store, bus, config);
+
+  const { el: offlineEl, destroy: destroyOffline } = createOfflineBanner(store);
 
   const { el: messagesEl, scrollToBottom } = createMessages(store, bus, config);
 
@@ -93,7 +153,7 @@ export function createWidget(shadow, config) {
 
   const { el: inputEl, focus: focusInput } = createInput(store, bus, config);
 
-  // ── 6. Assemble chat window ────────────────────────────────────────────────
+  // ── 10. Assemble chat window ──────────────────────────────────────────────
 
   const chatWindow = document.createElement('div');
   chatWindow.className = 'widget-window';
@@ -103,6 +163,7 @@ export function createWidget(shadow, config) {
   chatWindow.setAttribute('aria-hidden', 'true');
 
   chatWindow.appendChild(headerEl);
+  chatWindow.appendChild(offlineEl);
   chatWindow.appendChild(messagesEl);
   chatWindow.appendChild(errorEl);
   chatWindow.appendChild(inputEl);
@@ -170,6 +231,26 @@ export function createWidget(shadow, config) {
     handleSend(text);
   });
 
+  bus.on('voice-toggle', () => {
+    const state = store.getState();
+    if (state.status === 'loading') return; // don't let mic open during request
+    if (state.voiceState === 'listening') {
+      voice.stopListening();
+    } else {
+      // Stop any in-flight TTS so we don't capture the bot's own voice
+      voice.cancelSpeaking();
+      voice.startListening();
+    }
+  });
+
+  bus.on('tts-toggle', () => {
+    const nextEnabled = !store.getState().ttsEnabled;
+    store.setState({ ttsEnabled: nextEnabled });
+    voice.setMuted(!nextEnabled);
+    // Politely cancel whatever is playing when turning off.
+    if (!nextEnabled) voice.cancelSpeaking();
+  });
+
   // ── 9. Open / close ────────────────────────────────────────────────────────
 
   function openWidget() {
@@ -189,6 +270,10 @@ export function createWidget(shadow, config) {
     chatWindow.classList.remove('is-open');
     chatWindow.setAttribute('aria-hidden', 'true');
     focusTrap.deactivate(launcherFocusRef);
+    // Don't keep the mic / TTS running while the window is hidden —
+    // avoids surprise audio from a "closed" widget.
+    voice.stopListening();
+    voice.cancelSpeaking();
   }
 
   // ── 10. Global Escape key listener (stored ref for cleanup) ─────────────────────
@@ -220,6 +305,9 @@ export function createWidget(shadow, config) {
       status: 'loading',
       error: null,
     }));
+
+    // Subtle send sound (no-op if disabled / unsupported)
+    sounds.play('send');
 
     await dispatchApiCall(userMessage);
   }
@@ -281,6 +369,12 @@ export function createWidget(shadow, config) {
         store.setState((s) => ({ unreadCount: s.unreadCount + 1 }));
       }
 
+      // Receive chime + optional spoken reply.
+      sounds.play('receive');
+      if (store.getState().ttsEnabled) {
+        voice.speak(reply);
+      }
+
     } catch (err) {
       const errorDetails = classifyError(err);
 
@@ -297,6 +391,7 @@ export function createWidget(shadow, config) {
         },
       }));
 
+      sounds.play('error');
       console.error('[AI Widget] API call failed:', err);
     }
   }
@@ -311,6 +406,12 @@ export function createWidget(shadow, config) {
     document.removeEventListener('keydown', handleEscapeKey);
     bus.clear();
     persistTimer && clearTimeout(persistTimer);
+    try { unsubscribeNet(); } catch {}
+    try { netMonitor.destroy(); } catch {}
+    try { voice.destroy(); } catch {}
+    try { sounds.destroy(); } catch {}
+    try { destroyHeader(); } catch {}
+    try { destroyOffline(); } catch {}
   }
 
   return {

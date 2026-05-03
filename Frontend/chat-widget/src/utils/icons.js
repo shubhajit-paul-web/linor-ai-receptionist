@@ -37,3 +37,78 @@ export const ICON_RETRY = `
   <polyline points="1 4 1 10 7 10"/>
   <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
 </svg>`;
+
+/* Microphone — idle state */
+export const ICON_MIC = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+  <rect x="9" y="3" width="6" height="12" rx="3"/>
+  <path d="M5 11a7 7 0 0 0 14 0"/>
+  <line x1="12" y1="18" x2="12" y2="22"/>
+  <line x1="8" y1="22" x2="16" y2="22"/>
+</svg>`;
+
+/* Microphone — muted / denied */
+export const ICON_MIC_OFF = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+  <line x1="2" y1="2" x2="22" y2="22"/>
+  <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/>
+  <path d="M5 10v2a7 7 0 0 0 12 5"/>
+  <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/>
+  <path d="M9 9v3a3 3 0 0 0 5.12 2.12"/>
+  <line x1="12" y1="19" x2="12" y2="22"/>
+</svg>`;
+
+/* Speaker on — TTS enabled */
+export const ICON_VOLUME_ON = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true">
+  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+</svg>`;
+
+/* Speaker off — TTS disabled */
+export const ICON_VOLUME_OFF = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true">
+  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+  <line x1="23" y1="9" x2="17" y2="15"/>
+  <line x1="17" y1="9" x2="23" y2="15"/>
+</svg>`;
+
+/* Arrow down — scroll-to-bottom pill */
+export const ICON_ARROW_DOWN = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+  <line x1="12" y1="5" x2="12" y2="19"/>
+  <polyline points="19 12 12 19 5 12"/>
+</svg>`;
+
+/* Sparkles — AI / smart hint */
+export const ICON_SPARKLES = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true">
+  <path d="M12 2l1.9 5.1L19 9l-5.1 1.9L12 16l-1.9-5.1L5 9l5.1-1.9L12 2z"/>
+  <path d="M19 14l.9 2.4L22 17l-2.1.6L19 20l-.9-2.4L16 17l2.1-.6L19 14z"/>
+  <path d="M5 14l.9 2.4L8 17l-2.1.6L5 20l-.9-2.4L2 17l2.1-.6L5 14z"/>
+</svg>`;
+
+/* Delivered / read check marks */
+export const ICON_CHECK = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true">
+  <polyline points="20 6 9 17 4 12"/>
+</svg>`;
+
+export const ICON_CHECK_DOUBLE = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="13" height="11" aria-hidden="true">
+  <polyline points="1 12 6 17 15 7"/>
+  <polyline points="9 12 14 17 23 7"/>
+</svg>`;
+
+/* Offline / no-signal */
+export const ICON_OFFLINE = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+  <line x1="2" y1="2" x2="22" y2="22"/>
+  <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+  <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+  <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+  <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+  <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+  <line x1="12" y1="20" x2="12.01" y2="20"/>
+</svg>`;
