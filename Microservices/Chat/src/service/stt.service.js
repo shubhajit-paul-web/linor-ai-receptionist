@@ -1,6 +1,7 @@
 // services/stt.service.js
 const fs = require("fs");
 const Groq = require("groq-sdk");
+const logger = require("../utils/logger");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -19,7 +20,7 @@ exports.transcribeAudio = async (filePath) => {
 
     return transcription.text;
   } catch (error) {
-    console.error("[Groq STT Error]:", error);
+    logger.error("Groq STT Error: %s", error.message);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath); // Cleanup on fail
     throw error;
   }

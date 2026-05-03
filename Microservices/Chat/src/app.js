@@ -6,6 +6,7 @@ const xss = require("xss-clean");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const logger = require("./utils/logger");
 
 
 const app = express();
@@ -74,12 +75,12 @@ app.get("/", (req, res) => res.json({ status: "Chat Service running 🚀" }));
 // ── Warm up AI on start ────────────────────────────────────
 const { callAI } = require("./utils/geminiClient");
 callAI("You are a receptionist.", [{ role: "user", content: "hi" }])
-  .then(() => console.log("✅ AI warmed up"))
-  .catch((err) => console.warn("⚠️ AI warmup failed:", err.message));
+  .then(() => logger.info("AI warmed up"))
+  .catch((err) => logger.warn("AI warmup failed: %s", err.message));
 
 // ── Global error handler ───────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error(err.stack || err.message);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",

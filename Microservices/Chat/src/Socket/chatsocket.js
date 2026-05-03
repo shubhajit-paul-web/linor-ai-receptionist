@@ -1,10 +1,11 @@
 // socket/chatSocket.js
 const chatService = require("../service/chatservice");
+const logger = require("../utils/logger");
 
 module.exports = (io) => {
 
   io.on("connection", (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    logger.info("Socket connected: %s", socket.id);
 
     // ── Event 1: Client joins a session room ──────────────────────────────
     socket.on("join_session", async ({ sessionId, apiKey }) => {
@@ -55,7 +56,7 @@ module.exports = (io) => {
 
     // ── Event 3: Disconnect ───────────────────────────────────────────────
     socket.on("disconnect", () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+      logger.info("Socket disconnected: %s", socket.id);
     });
   });
 

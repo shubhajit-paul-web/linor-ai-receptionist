@@ -1,11 +1,12 @@
 // services/tts.service.js
 const Cartesia = require("@cartesia/cartesia-js");
+const logger = require("../utils/logger");
 
 const cartesia = new Cartesia({ apiKey: process.env.CARTESIA_API_KEY });
 
 exports.streamTTS = async (socket, text) => {
   try {
-    console.log(`[TTS] Generating audio for: "${text}"`);
+    logger.info('Generating audio for: "%s"', text);
 
     // Initialize the WebSocket to Cartesia
     const websocket = cartesia.tts.websocket({
@@ -43,7 +44,7 @@ exports.streamTTS = async (socket, text) => {
     });
 
   } catch (error) {
-    console.error("[Cartesia TTS Error]:", error);
+    logger.error("Cartesia TTS Error: %s", error.message);
     throw error;
   }
 };

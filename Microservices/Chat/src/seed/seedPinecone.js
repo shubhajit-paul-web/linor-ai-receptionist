@@ -1,10 +1,11 @@
 require("dotenv").config();
 const { Pinecone } = require("@pinecone-database/pinecone");
 const medicalKnowledge = require("../data/medicalKnowledge");
+const logger = require("../utils/logger");
 
 const seedMedicalKnowledge = async () => {
   try {
-    console.log("🔄 Connecting to Pinecone...");
+    logger.info("Connecting to Pinecone...");
     
     // Validate environment variables
     if (!process.env.PINECONE_API_KEY) {
@@ -13,30 +14,28 @@ const seedMedicalKnowledge = async () => {
     
     const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
     const indexName = process.env.PINECONE_INDEX_NAME || "Linor";
-    console.log(`📍 Using Pinecone index: "${indexName}"`);
+    logger.info('Using Pinecone index: "%s"', indexName);
     
     // Verify the index exists
-    console.log("🔍 Verifying index exists...");
+    logger.info("Verifying index exists...");
     let index;
     try {
       await pc.describeIndex(indexName);
-      console.log(`✅ Index "${indexName}" found`);
+      logger.info('Index "%s" found', indexName);
       index = pc.index(indexName);
     } catch (indexError) {
       if (indexError.message.includes("404")) {
-        console.error(`❌ Index "${indexName}" does not exist in Pinecone`);
-        console.error("Available options:");
-        console.error("1. Create the index in Pinecone console");
-        console.error("2. Check PINECONE_INDEX environment variable");
-        console.error("3. Verify PINECONE_API_KEY has correct permissions");
+        logger.error('Index "%s" does not exist in Pinecone', indexName);
+        logger.error("Available options:");
+        logger.error("1. Create the index in Pinecone console");
+        logger.error("2. Check PINECONE_INDEX environment variable");
+        logger.error("3. Verify PINECONE_API_KEY has correct permissions");
         throw indexError;
       }
       throw indexError;
     }
 
-    console.log(
-      `📚 Seeding ${medicalKnowledge.length} medical knowledge chunks...`,
-    );
+    logger.info("Seeding %s medical knowledge chunks...", medicalKnowledge.length);
 
     const batchSize = 10;
 
@@ -54,18 +53,20 @@ const seedMedicalKnowledge = async () => {
         advice: item.advice,
       }));
 
-await index.upsertRecords({ records: [...records] })  
-      console.log(
-        `✅ Batch ${Math.floor(i / batchSize) + 1} done (${records.length} records)`,
+      await index.upsertRecords({ records: [...records] });
+      logger.info(
+        "Batch %s done (%s records)",
+        Math.floor(i / batchSize) + 1,
+        records.length,
       );
       await new Promise((r) => setTimeout(r, 300));
     }
 
-    console.log("\n🎉 Seeded successfully!");
-    console.log(`Total: ${medicalKnowledge.length} chunks in Pinecone`);
+    logger.info("Seeded successfully!");
+    logger.info("Total: %s chunks in Pinecone", medicalKnowledge.length);
   } catch (err) {
-    console.error("❌ Seeding failed:", err.message);
-    console.error(err);
+    logger.error("Seeding failed: %s", err.message);
+    logger.error(err.stack || err.message);
     process.exit(1);
   }
 };
