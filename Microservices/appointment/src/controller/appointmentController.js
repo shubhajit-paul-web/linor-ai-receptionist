@@ -1,9 +1,23 @@
 const Appointment = require("../model/appointment.model");
 const asyncHandler = require("../utils/asyncHandler");
+const {
+  appointmentListPipeline,
+  appointmentCountPipeline,
+  bookedSlotsPipeline,
+  appointmentsByStatusPipeline,
+  appointmentsByDateRangePipeline,
+  topServicesPipeline,
+  appointmentStatsPipeline,
+  slotsByServicePipeline,
+} = require("../utils/aggregationPipelines");
 
 const AVAILABLE_SLOTS = [
-  "10:00 AM", "11:00 AM", "12:00 PM",
-  "02:00 PM", "03:00 PM", "04:00 PM",
+  "10:00 AM",
+  "11:00 AM",
+  "12:00 PM",
+  "02:00 PM",
+  "03:00 PM",
+  "04:00 PM",
 ];
 
 // ─────────────────────────────────────────
@@ -12,15 +26,45 @@ const AVAILABLE_SLOTS = [
 // ─────────────────────────────────────────
 const getAllAppointments = asyncHandler(async (req, res) => {
   const user_id = String(req.user.id);
-  const { status, date } = req.query;
+  const {
+    status,
+    date,
+    dateFrom,
+    dateTo,
+    patientName,
+    page = 1,
+    limit = 10,
+  } = req.query;
 
-  const filter = { user_id };
-  if (status) filter.status = status;
-  if (date)   filter.date   = date;
+  const filters = {
+    status,
+    date,
+    dateFrom,
+    dateTo,
+    patientName,
+    page: parseInt(page),
+    limit: parseInt(limit),
+  };
+  
+  const pipeline = appointmentListPipeline(user_id, filters);
+  const countPipeline = appointmentCountPipeline(user_id, filters);
 
-  const appointments = await Appointment.find(filter).sort({ createdAt: -1 });
+  // OPTIMIZATION: Execute both data and count pipelines concurrently
+  const [appointments, countResult] = await Promise.all([
+    Appointment.aggregate(pipeline),
+    Appointment.aggregate(countPipeline)
+  ]);
 
-  res.json({ success: true, count: appointments.length, data: appointments });
+  const total = countResult[0]?.total || 0;
+
+  res.json({
+    success: true,
+    count: appointments.length,
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: appointments,
+  });
 });
 
 // ─────────────────────────────────────────
@@ -30,13 +74,16 @@ const getAllAppointments = asyncHandler(async (req, res) => {
 const getAppointmentById = asyncHandler(async (req, res) => {
   const user_id = String(req.user.id);
 
+  // OPTIMIZATION: Added .lean() to return a plain JS object, saving Mongoose overhead
   const appointment = await Appointment.findOne({
     _id: req.params.id,
     user_id,
-  });
+  }).lean();
 
   if (!appointment) {
-    return res.status(404).json({ success: false, message: "Appointment not found" });
+    return res
+      .status(404)
+      .json({ success: false, message: "Appointment not found" });
   }
 
   res.json({ success: true, data: appointment });
@@ -50,7 +97,8 @@ const createAppointment = asyncHandler(async (req, res) => {
   // user_id comes from API key middleware
   const user_id = String(req.user_id);
 
-  const { patientName, phone, date, time, service, sessionId, notes } = req.body;
+  const { patientName, phone, date, time, service, sessionId, notes } =
+    req.body;
 
   // Validate required fields
   if (!patientName || !date || !time || !service) {
@@ -68,13 +116,13 @@ const createAppointment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Conflict check — same clinic, same date, same time, not cancelled
+  // OPTIMIZATION: Added '_id' projection and .lean() for fastest possible conflict check
   const conflict = await Appointment.findOne({
     user_id,
     date,
     time,
     status: { $ne: "cancelled" },
-  });
+  }, '_id').lean();
 
   if (conflict) {
     return res.status(409).json({
@@ -87,13 +135,13 @@ const createAppointment = asyncHandler(async (req, res) => {
   const appointment = await Appointment.create({
     user_id,
     patientName,
-    phone:     phone     || "",
+    phone: phone || "",
     date,
     time,
     service,
     sessionId: sessionId || "",
-    notes:     notes     || "",
-    status:    "pending",
+    notes: notes || "",
+    status: "pending",
   });
 
   res.status(201).json({
@@ -121,11 +169,13 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
   const appointment = await Appointment.findOneAndUpdate(
     { _id: req.params.id, user_id },
     { status },
-    { returnDocument: 'after' }
+    { returnDocument: "after" },
   );
 
   if (!appointment) {
-    return res.status(404).json({ success: false, message: "Appointment not found" });
+    return res
+      .status(404)
+      .json({ success: false, message: "Appointment not found" });
   }
 
   res.json({ success: true, data: appointment });
@@ -144,7 +194,9 @@ const deleteAppointment = asyncHandler(async (req, res) => {
   });
 
   if (!appointment) {
-    return res.status(404).json({ success: false, message: "Appointment not found" });
+    return res
+      .status(404)
+      .json({ success: false, message: "Appointment not found" });
   }
 
   res.json({ success: true, message: "Appointment deleted" });
@@ -161,19 +213,111 @@ const getAvailableSlots = asyncHandler(async (req, res) => {
   const user_id = String(req.user?.id || req.user_id);
 
   if (!date) {
-    return res.status(400).json({ success: false, message: "date query param required" });
+    return res
+      .status(400)
+      .json({ success: false, message: "date query param required" });
   }
 
-  const booked = await Appointment.find({
-    user_id,
-    date,
-    status: { $ne: "cancelled" },
-  }).select("time");
+  // Use aggregation for efficient slot retrieval
+  const pipeline = bookedSlotsPipeline(user_id, date);
+  const result = await Appointment.aggregate(pipeline);
 
-  const bookedTimes = booked.map((a) => a.time);
-  const available   = AVAILABLE_SLOTS.filter((slot) => !bookedTimes.includes(slot));
+  const bookedTimes = result[0]?.times || [];
+  const available = AVAILABLE_SLOTS.filter(
+    (slot) => !bookedTimes.includes(slot),
+  );
 
   res.json({ success: true, date, available, booked: bookedTimes });
+});
+
+// ─────────────────────────────────────────
+// GET /api/appointments/analytics/stats
+// Admin — get appointment statistics
+// ─────────────────────────────────────────
+const getAppointmentStats = asyncHandler(async (req, res) => {
+  const user_id = String(req.user.id);
+
+  const pipeline = appointmentStatsPipeline(user_id);
+  const stats = await Appointment.aggregate(pipeline);
+
+  res.json({
+    success: true,
+    data: stats[0] || {
+      total: 0,
+      pending: 0,
+      confirmed: 0,
+      cancelled: 0,
+    },
+  });
+});
+
+// ─────────────────────────────────────────
+// GET /api/appointments/analytics/by-status
+// Admin — get breakdown by status
+// ─────────────────────────────────────────
+const getAppointmentsByStatus = asyncHandler(async (req, res) => {
+  const user_id = String(req.user.id);
+
+  const pipeline = appointmentsByStatusPipeline(user_id);
+  const data = await Appointment.aggregate(pipeline);
+
+  res.json({ success: true, data });
+});
+
+// ─────────────────────────────────────────
+// GET /api/appointments/analytics/by-date-range
+// Admin — get appointments by date range
+// ─────────────────────────────────────────
+const getAppointmentsByDateRange = asyncHandler(async (req, res) => {
+  const user_id = String(req.user.id);
+  const { dateFrom, dateTo } = req.query;
+
+  if (!dateFrom || !dateTo) {
+    return res.status(400).json({
+      success: false,
+      message: "dateFrom and dateTo query params required",
+    });
+  }
+
+  const pipeline = appointmentsByDateRangePipeline(user_id, dateFrom, dateTo);
+  const data = await Appointment.aggregate(pipeline);
+
+  res.json({ success: true, data });
+});
+
+// ─────────────────────────────────────────
+// GET /api/appointments/analytics/top-services
+// Admin — get most booked services
+// ─────────────────────────────────────────
+const getTopServices = asyncHandler(async (req, res) => {
+  const user_id = String(req.user.id);
+  const { limit = 5 } = req.query;
+
+  const pipeline = topServicesPipeline(user_id, parseInt(limit));
+  const data = await Appointment.aggregate(pipeline);
+
+  res.json({ success: true, data });
+});
+
+// ─────────────────────────────────────────
+// GET /api/appointments/analytics/slots-by-service?date=2026-05-03
+// Admin — get slots breakdown by service
+// ─────────────────────────────────────────
+const getSlotsByService = asyncHandler(async (req, res) => {
+  const user_id = String(req.user.id);
+  const { date } = req.query;
+
+  if (!date) {
+    return res.status(400).json({
+      success: false,
+      message: "date query param required",
+    });
+  }
+
+  const pipeline = slotsByServicePipeline(user_id, date);
+  const data = await Appointment.aggregate(pipeline);
+
+  res.json({ success: true, date, data });
 });
 
 module.exports = {
@@ -183,4 +327,9 @@ module.exports = {
   updateAppointmentStatus,
   deleteAppointment,
   getAvailableSlots,
+  getAppointmentStats,
+  getAppointmentsByStatus,
+  getAppointmentsByDateRange,
+  getTopServices,
+  getSlotsByService,
 };

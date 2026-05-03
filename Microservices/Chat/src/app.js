@@ -7,6 +7,7 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 
+
 const app = express();
 
 // ── Security headers ───────────────────────────────────────
@@ -21,6 +22,8 @@ app.use(cookieParser());
 // ── Body parsing ───────────────────────────────────────────
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+
+
 
 // ── Fix for Express 5 + mongo-sanitize ────────────────────
 app.use((req, res, next) => {
