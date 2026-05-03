@@ -10,9 +10,11 @@ const {
 } = require("../utils/intentDetector");
 const {
   initSession,
+  getSession,
   isInBookingFlow,
   handleBookingStep,
 } = require("../utils/bookingStateMachine");
+const { buildSuggestions } = require("../utils/suggestionBuilder");
 const logger = require("../utils/logger");
 
 const RATE_LIMIT = 20;
@@ -56,15 +58,35 @@ exports.chat = asyncHandler(async (req, res) => {
   const inBooking = await isInBookingFlow(sessionId);
   if (inBooking) {
     const result = await handleBookingStep(sessionId, message, clinic);
-    if (result.done && result.appointmentData) {
-      await saveAppointment(
-        req.headers["x-api-key"],
-        user_id,
-        sessionId,
-        result.appointmentData,
-      );
+
+    if (result.done) {
+      if (result.appointmentData) {
+        await saveAppointment(
+          req.headers["x-api-key"],
+          user_id,
+          sessionId,
+          result.appointmentData,
+        );
+      }
+      return res.json({
+        success: true,
+        reply: result.reply,
+        suggestions: buildSuggestions({ intent: "booking-done", clinic }),
+      });
     }
-    return res.json({ success: true, reply: result.reply });
+
+    // Mid-flow: look at the *next* step saved by handleBookingStep and
+    // surface chips appropriate for that step (dates, times, services, confirm).
+    const nextSession = await getSession(sessionId);
+    return res.json({
+      success: true,
+      reply: result.reply,
+      suggestions: buildSuggestions({
+        intent: "booking-step",
+        stage: nextSession?.step,
+        clinic,
+      }),
+    });
   }
 
   // ── Step 2: Booking intent ─────────────────────────────────
@@ -73,6 +95,8 @@ exports.chat = asyncHandler(async (req, res) => {
     return res.json({
       success: true,
       reply: `I'd be happy to help you book an appointment! May I have your full name please?`,
+      // No chips here — we want the user to type their name freely.
+      suggestions: [],
     });
   }
 
@@ -150,14 +174,25 @@ exports.chat = asyncHandler(async (req, res) => {
   ];
 
   let aiReply;
+  let aiFailed = false;
   try {
     aiReply = await callAI(systemPrompt, recentHistory);
   } catch (err) {
     logger.error("AI error: %s", err.message);
     aiReply = `I'm having trouble right now. Please call us at ${clinic.phone || "our clinic"} for immediate assistance.`;
+    aiFailed = true;
   }
 
-  return res.json({ success: true, reply: aiReply });
+  // Contextual quick replies — drive the next best action without extra tokens.
+  const suggestions = aiFailed
+    ? (clinic?.phone ? [`Call ${clinic.phone}`, "Working hours"] : [])
+    : buildSuggestions({
+        intent: isSymptom ? "symptom" : "general",
+        clinic,
+        tone,
+      });
+
+  return res.json({ success: true, reply: aiReply, suggestions });
 });
 
 // ─────────────────────────────────────────────────────────────

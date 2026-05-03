@@ -1,4 +1,4 @@
-var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnPropertyDescriptors;var X=Object.getOwnPropertySymbols;var Le=Object.prototype.hasOwnProperty,Oe=Object.prototype.propertyIsEnumerable;var J=(z,E,S)=>E in z?Te(z,E,{enumerable:!0,configurable:!0,writable:!0,value:S}):z[E]=S,A=(z,E)=>{for(var S in E||(E={}))Le.call(E,S)&&J(z,S,E[S]);if(X)for(var S of X(E))Oe.call(E,S)&&J(z,S,E[S]);return z},R=(z,E)=>$e(z,Ne(E));(function(){"use strict";const z={botName:"Assistant",primaryColor:"#6366f1",welcomeMessage:"Hi! How can I help you today?",position:"bottom-right",offsetX:24,offsetY:24,zIndex:2147483647,buttonSize:56,windowWidth:380,windowHeight:580,hideAttribution:!1,avatarUrl:null,apiKey:null,apiUrl:null,sessionTtlHours:24,maxRetries:3,requestTimeoutMs:3e4};function E(t){const r=t.replace("#",""),s=r.length===3?r.split("").map(a=>a+a).join(""):r,e=/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(s);return e?[parseInt(e[1],16),parseInt(e[2],16),parseInt(e[3],16)].join(", "):"99, 102, 241"}function S(t){const r=typeof window!="undefined"&&window.__AI_WIDGET_CONFIG__?window.__AI_WIDGET_CONFIG__:{},s=typeof window!="undefined"&&window.LinorConfig?window.LinorConfig:{},e={};if(t){const i=l=>t.getAttribute(`data-${l}`),o=l=>{const b=parseInt(i(l),10);return isNaN(b)?void 0:b};i("api-key")&&(e.apiKey=i("api-key")),i("api-url")&&(e.apiUrl=i("api-url")),i("bot-name")&&(e.botName=i("bot-name")),i("primary-color")&&(e.primaryColor=i("primary-color")),i("welcome-message")&&(e.welcomeMessage=i("welcome-message")),i("position")&&(e.position=i("position")),i("avatar-url")&&(e.avatarUrl=i("avatar-url")),i("hide-attribution")&&(e.hideAttribution=i("hide-attribution")!=="false");const u=o("offset-x");u!==void 0&&(e.offsetX=u);const d=o("offset-y");d!==void 0&&(e.offsetY=d);const p=o("z-index");p!==void 0&&(e.zIndex=p);const f=o("button-size");f!==void 0&&(e.buttonSize=f);const m=o("window-width");m!==void 0&&(e.windowWidth=m);const x=o("window-height");x!==void 0&&(e.windowHeight=x);const v=o("session-ttl-hours");v!==void 0&&(e.sessionTtlHours=v);const g=o("max-retries");g!==void 0&&(e.maxRetries=g);const _=o("request-timeout-ms");_!==void 0&&(e.requestTimeoutMs=_)}const a=A(A(A(A({},z),r),s),e);return["bottom-right","bottom-left","top-right","top-left"].includes(a.position)||(console.warn(`[AI Widget] Invalid position "${a.position}". Falling back to "bottom-right".`),a.position="bottom-right"),a.primaryRgb=E(a.primaryColor),a.apiKey||console.warn("[AI Widget] Missing api-key. Widget will be disabled. Set data-api-key on the script tag or window.LinorConfig.apiKey."),a.apiUrl||console.warn("[AI Widget] Missing api-url. Widget will be disabled. Set data-api-url on the script tag or window.LinorConfig.apiUrl."),a}function Z(t){let r=A({},t);const s=new Set;return{getState(){return r},setState(e){const a=r,n=typeof e=="function"?e(r):e;r=A(A({},r),n),s.forEach(i=>i(r,a))},subscribe(e){return s.add(e),()=>s.delete(e)}}}function Q(t,r=[]){return{isOpen:!1,messages:r,status:"idle",error:null,sessionId:t,unreadCount:0}}const D={get(t){try{const r=localStorage.getItem(t);return r!==null?JSON.parse(r):null}catch(r){return null}},set(t,r){try{return localStorage.setItem(t,JSON.stringify(r)),!0}catch(s){return!1}},remove(t){try{localStorage.removeItem(t)}catch(r){}},isAvailable(){try{const t="__ai_widget_test__";return localStorage.setItem(t,"1"),localStorage.removeItem(t),!0}catch(t){return!1}}};function U(){return`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`}function ee(){return`sess_${U()}`}function te(t,r){const s=`ai_widget_session_${t}`,e=r*60*60*1e3;function a(n){return Date.now()-n>e}return{load(){const n=D.get(s);return n?a(n.lastActive)?(D.remove(s),null):{sessionId:n.sessionId,messages:Array.isArray(n.messages)?n.messages:[]}:null},save(n,i){D.set(s,{sessionId:n,messages:i,lastActive:Date.now()})},clear(){D.remove(s)},createNew(){return ee()}}}class H extends Error{constructor(r){super(r),this.name="NetworkError"}}class j extends Error{constructor(r){super(`Request timed out after ${r}ms`),this.name="TimeoutError"}}class M extends Error{constructor(r,s){super(r),this.name="ApiError",this.status=s}}async function re(t,r,s){const e=new AbortController,a=setTimeout(()=>e.abort(),s);try{return await fetch(t,R(A({},r),{signal:e.signal}))}catch(n){throw n.name==="AbortError"?new j(s):new H(n.message||"Network request failed")}finally{clearTimeout(a)}}async function ae(t,r=3,s=600){let e;for(let a=0;a<=r;a++)try{return await t()}catch(n){if(e=n,n instanceof M&&n.status>=400&&n.status<500)throw n;if(a<r){const i=s*Math.pow(2,a),o=Math.random()*200;await new Promise(u=>setTimeout(u,i+o))}}throw e}function ne(t){return t instanceof j?{message:"The request took too long. Please try again.",retryable:!0}:t instanceof H?{message:"No internet connection. Please check your network.",retryable:!0}:t instanceof M?t.status===401||t.status===403?{message:"Authentication failed. Please check your API key.",retryable:!1}:t.status>=500?{message:"Server error. We're working on it — please try again.",retryable:!0}:{message:"Something went wrong. Please try again.",retryable:!0}:{message:"An unexpected error occurred. Please try again.",retryable:!0}}async function se(t,r){const{apiKey:s,apiUrl:e,sessionId:a,maxRetries:n,requestTimeoutMs:i}=r;return ae(async()=>{var f,m,x,v;const u=await re(e,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${s}`,"X-Widget-Session":a||"","X-Widget-Version":"1.0.0"},body:JSON.stringify({messages:t.map(({role:g,content:_})=>({role:g,content:_})),session_id:a})},i);if(!u.ok){let g="";try{const _=await u.json();g=_.error||_.message||JSON.stringify(_)}catch(_){g=await u.text().catch(()=>`HTTP ${u.status}`)}throw new M(g||`HTTP ${u.status}`,u.status)}let d;try{d=await u.json()}catch(g){throw new M("Invalid JSON in API response",200)}const p=(v=(x=(m=(f=d.reply)!=null?f:d.message)!=null?m:d.content)!=null?x:d.text)!=null?v:d.answer;if(typeof p!="string"||p.trim()==="")throw new M("Unrecognised response format from API",200);return p.trim()},n)}function ie(){const t=new Map;return{on(r,s){return t.has(r)||t.set(r,new Set),t.get(r).add(s),()=>this.off(r,s)},off(r,s){var e;(e=t.get(r))==null||e.delete(s)},emit(r,s){var e;(e=t.get(r))==null||e.forEach(a=>{try{a(s)}catch(n){console.error(`[AI Widget] EventBus error in handler for "${r}":`,n)}})},clear(){t.clear()}}}const oe=["button:not([disabled])","textarea:not([disabled])","input:not([disabled])","a[href]",'[tabindex]:not([tabindex="-1"])'].join(", ");function P(t){return Array.from(t.querySelectorAll(oe)).filter(r=>!r.closest("[hidden]")&&r.offsetParent!==null)}function le(t){let r=!1;function s(e){if(!r||e.key!=="Tab")return;const a=P(t);if(a.length===0){e.preventDefault();return}const n=a[0],i=a[a.length-1],o=e.target;e.shiftKey?o===n&&(e.preventDefault(),i.focus()):o===i&&(e.preventDefault(),n.focus())}return{activate(e){r=!0,t.addEventListener("keydown",s);const a=e||P(t)[0];a&&requestAnimationFrame(()=>a.focus())},deactivate(e){r=!1,t.removeEventListener("keydown",s),e&&requestAnimationFrame(()=>e.focus())}}}function de(t,r){t.textContent="",requestAnimationFrame(()=>{requestAnimationFrame(()=>{t.textContent=r})})}function ce(t){return`
+var Me=Object.defineProperty,Be=Object.defineProperties;var Re=Object.getOwnPropertyDescriptors;var te=Object.getOwnPropertySymbols;var De=Object.prototype.hasOwnProperty,He=Object.prototype.propertyIsEnumerable;var re=(T,C,I)=>C in T?Me(T,C,{enumerable:!0,configurable:!0,writable:!0,value:I}):T[C]=I,E=(T,C)=>{for(var I in C||(C={}))De.call(C,I)&&re(T,I,C[I]);if(te)for(var I of te(C))He.call(C,I)&&re(T,I,C[I]);return T},W=(T,C)=>Be(T,Re(C));(function(){"use strict";const T={botName:"Assistant",primaryColor:"#6366f1",welcomeMessage:"Hi! How can I help you today?",position:"bottom-right",offsetX:24,offsetY:24,zIndex:2147483647,buttonSize:56,windowWidth:380,windowHeight:580,hideAttribution:!1,avatarUrl:null,apiKey:null,apiUrl:null,sessionTtlHours:24,maxRetries:3,requestTimeoutMs:3e4,defaultSuggestions:["Book an appointment","Working hours","Services offered","Contact info"]};function C(e){const r=e.replace("#",""),n=r.length===3?r.split("").map(a=>a+a).join(""):r,t=/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(n);return t?[parseInt(t[1],16),parseInt(t[2],16),parseInt(t[3],16)].join(", "):"99, 102, 241"}function I(e){const r=typeof window!="undefined"&&window.__AI_WIDGET_CONFIG__?window.__AI_WIDGET_CONFIG__:{},n=typeof window!="undefined"&&window.LinorConfig?window.LinorConfig:{},t={};if(e){const s=w=>e.getAttribute(`data-${w}`),o=w=>{const c=parseInt(s(w),10);return isNaN(c)?void 0:c};s("api-key")&&(t.apiKey=s("api-key")),s("api-url")&&(t.apiUrl=s("api-url")),s("bot-name")&&(t.botName=s("bot-name")),s("primary-color")&&(t.primaryColor=s("primary-color")),s("welcome-message")&&(t.welcomeMessage=s("welcome-message")),s("position")&&(t.position=s("position")),s("avatar-url")&&(t.avatarUrl=s("avatar-url")),s("hide-attribution")&&(t.hideAttribution=s("hide-attribution")!=="false");const h=o("offset-x");h!==void 0&&(t.offsetX=h);const u=o("offset-y");u!==void 0&&(t.offsetY=u);const p=o("z-index");p!==void 0&&(t.zIndex=p);const l=o("button-size");l!==void 0&&(t.buttonSize=l);const b=o("window-width");b!==void 0&&(t.windowWidth=b);const g=o("window-height");g!==void 0&&(t.windowHeight=g);const m=o("session-ttl-hours");m!==void 0&&(t.sessionTtlHours=m);const v=o("max-retries");v!==void 0&&(t.maxRetries=v);const A=o("request-timeout-ms");A!==void 0&&(t.requestTimeoutMs=A);const f=s("default-suggestions");f!=null&&(t.defaultSuggestions=f.split("|").map(w=>w.trim()).filter(Boolean).slice(0,4))}const a=E(E(E(E({},T),r),n),t);return["bottom-right","bottom-left","top-right","top-left"].includes(a.position)||(console.warn(`[AI Widget] Invalid position "${a.position}". Falling back to "bottom-right".`),a.position="bottom-right"),a.primaryRgb=C(a.primaryColor),a.apiKey||console.warn("[AI Widget] Missing api-key. Widget will be disabled. Set data-api-key on the script tag or window.LinorConfig.apiKey."),a.apiUrl||console.warn("[AI Widget] Missing api-url. Widget will be disabled. Set data-api-url on the script tag or window.LinorConfig.apiUrl."),a}function ae(e){let r=E({},e);const n=new Set;return{getState(){return r},setState(t){const a=r,i=typeof t=="function"?t(r):t;r=E(E({},r),i),n.forEach(s=>s(r,a))},subscribe(t){return n.add(t),()=>n.delete(t)}}}function ne(e,r=[]){return{isOpen:!1,messages:r,status:"idle",error:null,sessionId:e,unreadCount:0}}const U={get(e){try{const r=localStorage.getItem(e);return r!==null?JSON.parse(r):null}catch(r){return null}},set(e,r){try{return localStorage.setItem(e,JSON.stringify(r)),!0}catch(n){return!1}},remove(e){try{localStorage.removeItem(e)}catch(r){}},isAvailable(){try{const e="__ai_widget_test__";return localStorage.setItem(e,"1"),localStorage.removeItem(e),!0}catch(e){return!1}}};function P(){return`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`}function se(){return`sess_${P()}`}function ie(e,r){const n=`ai_widget_session_${e}`,t=r*60*60*1e3;function a(i){return Date.now()-i>t}return{load(){const i=U.get(n);return i?a(i.lastActive)?(U.remove(n),null):{sessionId:i.sessionId,messages:Array.isArray(i.messages)?i.messages:[]}:null},save(i,s){U.set(n,{sessionId:i,messages:s,lastActive:Date.now()})},clear(){U.remove(n)},createNew(){return se()}}}class F extends Error{constructor(r){super(r),this.name="NetworkError"}}class q extends Error{constructor(r){super(`Request timed out after ${r}ms`),this.name="TimeoutError"}}class R extends Error{constructor(r,n){super(r),this.name="ApiError",this.status=n}}async function oe(e,r,n){const t=new AbortController,a=setTimeout(()=>t.abort(),n);try{return await fetch(e,W(E({},r),{signal:t.signal}))}catch(i){throw i.name==="AbortError"?new q(n):new F(i.message||"Network request failed")}finally{clearTimeout(a)}}async function le(e,r=3,n=600){let t;for(let a=0;a<=r;a++)try{return await e()}catch(i){if(t=i,i instanceof R&&i.status>=400&&i.status<500)throw i;if(a<r){const s=n*Math.pow(2,a),o=Math.random()*200;await new Promise(h=>setTimeout(h,s+o))}}throw t}function de(e){return e instanceof q?{message:"The request took too long. Please try again.",retryable:!0}:e instanceof F?{message:"No internet connection. Please check your network.",retryable:!0}:e instanceof R?e.status===401||e.status===403?{message:"Authentication failed. Please check your API key.",retryable:!1}:e.status>=500?{message:"Server error. We're working on it — please try again.",retryable:!0}:{message:"Something went wrong. Please try again.",retryable:!0}:{message:"An unexpected error occurred. Please try again.",retryable:!0}}async function ce(e,r){const{apiKey:n,apiUrl:t,sessionId:a,maxRetries:i,requestTimeoutMs:s}=r;return le(async()=>{var g,m,v,A;const h=e[e.length-1],u=e.slice(0,-1).map(({role:f,content:w})=>({role:f,content:w})),p=await oe(t,{method:"POST",headers:{"Content-Type":"application/json","x-api-key":n,Authorization:`Bearer ${n}`,"X-Widget-Session":a||"","X-Widget-Version":"1.0.0"},body:JSON.stringify({message:h.content,sessionId:a,history:u})},s);if(!p.ok){let f="";try{const w=await p.json();f=w.error||w.message||JSON.stringify(w)}catch(w){f=await p.text().catch(()=>`HTTP ${p.status}`)}throw new R(f||`HTTP ${p.status}`,p.status)}let l;try{l=await p.json()}catch(f){throw new R("Invalid JSON in API response",200)}const b=(A=(v=(m=(g=l.reply)!=null?g:l.message)!=null?m:l.content)!=null?v:l.text)!=null?A:l.answer;if(typeof b!="string"||b.trim()==="")throw new R("Unrecognised response format from API",200);return{reply:b.trim(),suggestions:ue(l.suggestions)}},i)}function ue(e){if(!Array.isArray(e))return[];const r=new Set,n=[];for(const t of e){if(typeof t!="string")continue;const a=t.trim();if(!a)continue;const i=a.length>60?a.slice(0,60).trim():a,s=i.toLowerCase();if(!r.has(s)&&(r.add(s),n.push(i),n.length>=4))break}return n}function pe(){const e=new Map;return{on(r,n){return e.has(r)||e.set(r,new Set),e.get(r).add(n),()=>this.off(r,n)},off(r,n){var t;(t=e.get(r))==null||t.delete(n)},emit(r,n){var t;(t=e.get(r))==null||t.forEach(a=>{try{a(n)}catch(i){console.error(`[AI Widget] EventBus error in handler for "${r}":`,i)}})},clear(){e.clear()}}}const fe=["button:not([disabled])","textarea:not([disabled])","input:not([disabled])","a[href]",'[tabindex]:not([tabindex="-1"])'].join(", ");function Y(e){return Array.from(e.querySelectorAll(fe)).filter(r=>!r.closest("[hidden]")&&r.offsetParent!==null)}function be(e){let r=!1;function n(t){if(!r||t.key!=="Tab")return;const a=Y(e);if(a.length===0){t.preventDefault();return}const i=a[0],s=a[a.length-1],o=t.target;t.shiftKey?o===i&&(t.preventDefault(),s.focus()):o===s&&(t.preventDefault(),i.focus())}return{activate(t){r=!0,e.addEventListener("keydown",n);const a=t||Y(e)[0];a&&requestAnimationFrame(()=>a.focus())},deactivate(t){r=!1,e.removeEventListener("keydown",n),t&&requestAnimationFrame(()=>t.focus())}}}function ge(e,r){e.textContent="",requestAnimationFrame(()=>{requestAnimationFrame(()=>{e.textContent=r})})}function he(e){return`
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -7,10 +7,10 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
 
     :host {
       /* === Brand === */
-      --primary:          ${t.primaryColor};
-      --primary-rgb:      ${t.primaryRgb};
-      --primary-light:    rgba(${t.primaryRgb}, 0.12);
-      --primary-hover:    rgba(${t.primaryRgb}, 0.88);
+      --primary:          ${e.primaryColor};
+      --primary-rgb:      ${e.primaryRgb};
+      --primary-light:    rgba(${e.primaryRgb}, 0.12);
+      --primary-hover:    rgba(${e.primaryRgb}, 0.88);
 
       /* === Surface === */
       --surface:          #ffffff;
@@ -62,7 +62,7 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
       --transition-spring: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
       /* === Z-index === */
-      --z-widget:         ${t.zIndex};
+      --z-widget:         ${e.zIndex};
 
       /* === Layout === */
       font-family:        var(--font);
@@ -85,18 +85,18 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
       white-space: nowrap;
       border-width: 0;
     }
-  `}function ue(t){const r=t.position||"bottom-right",s=r.includes("left"),e=r.includes("top"),a=typeof t.offsetX=="number"?t.offsetX:24,n=typeof t.offsetY=="number"?t.offsetY:24,i=typeof t.buttonSize=="number"?t.buttonSize:56,o=typeof t.windowWidth=="number"?t.windowWidth:380,u=typeof t.windowHeight=="number"?t.windowHeight:580,d=12,p=n+i+d,f=s?"left":"right",m=e?"top":"bottom",x=e?"-14px":"14px",v=`${e?"top":"bottom"} ${s?"left":"right"}`,g=Math.max(i-4,44);return`
+  `}function me(e){const r=e.position||"bottom-right",n=r.includes("left"),t=r.includes("top"),a=typeof e.offsetX=="number"?e.offsetX:24,i=typeof e.offsetY=="number"?e.offsetY:24,s=typeof e.buttonSize=="number"?e.buttonSize:56,o=typeof e.windowWidth=="number"?e.windowWidth:380,h=typeof e.windowHeight=="number"?e.windowHeight:580,u=12,p=i+s+u,l=n?"left":"right",b=t?"top":"bottom",g=t?"-14px":"14px",m=`${t?"top":"bottom"} ${n?"left":"right"}`,v=Math.max(s-4,44);return`
     /* ===================================================
        LAUNCHER BUTTON
     =================================================== */
 
     .launcher {
       position: fixed;
-      ${m}: ${n}px;
-      ${f}: ${a}px;
+      ${b}: ${i}px;
+      ${l}: ${a}px;
       z-index: var(--z-widget);
-      width: ${i}px;
-      height: ${i}px;
+      width: ${s}px;
+      height: ${s}px;
       border-radius: var(--radius-full);
       background: var(--primary);
       border: none;
@@ -196,11 +196,11 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
 
     .widget-window {
       position: fixed;
-      ${m}: ${p}px;
-      ${f}: ${a}px;
+      ${b}: ${p}px;
+      ${l}: ${a}px;
       z-index: var(--z-widget);
       width: ${o}px;
-      height: ${u}px;
+      height: ${h}px;
       max-height: calc(100dvh - ${p+16}px);
       background: var(--surface);
       border-radius: var(--radius-xl);
@@ -211,8 +211,8 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
       pointer-events: none;
       /* Animation start state */
       opacity: 0;
-      transform: scale(0.93) translateY(${x});
-      transform-origin: ${v};
+      transform: scale(0.93) translateY(${g});
+      transform-origin: ${m};
       transition: opacity 0.2s ease,
                   transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
       will-change: transform, opacity;
@@ -231,23 +231,23 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
     @media (max-width: 480px) {
       .widget-window {
         width: calc(100vw - 16px);
-        height: calc(100dvh - ${g+n+d+16}px);
-        max-height: calc(100dvh - ${g+n+d+16}px);
-        ${m}: ${g+n+d}px;
-        ${f}: 8px;
-        ${s?"right: 8px;":"left: 8px;"}
+        height: calc(100dvh - ${v+i+u+16}px);
+        max-height: calc(100dvh - ${v+i+u+16}px);
+        ${b}: ${v+i+u}px;
+        ${l}: 8px;
+        ${n?"right: 8px;":"left: 8px;"}
         border-radius: var(--radius-lg) var(--radius-lg) var(--radius-md) var(--radius-md);
-        transform-origin: ${e?"top":"bottom"} center;
+        transform-origin: ${t?"top":"bottom"} center;
       }
 
       .launcher {
-        ${m}: ${Math.max(n-10,8)}px;
-        ${f}: ${Math.max(a-10,8)}px;
-        width: ${g}px;
-        height: ${g}px;
+        ${b}: ${Math.max(i-10,8)}px;
+        ${l}: ${Math.max(a-10,8)}px;
+        width: ${v}px;
+        height: ${v}px;
       }
     }
-  `}function pe(){return`
+  `}function xe(){return`
     /* ===================================================
        HEADER
     =================================================== */
@@ -593,6 +593,91 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
     }
 
     /* ===================================================
+       SUGGESTION CHIPS
+    =================================================== */
+
+    /* Row container — horizontal, wraps on very narrow screens */
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .suggestions[hidden] {
+      display: none;
+    }
+
+    /* Welcome-state chips: centered so they sit nicely under the greeting */
+    .messages-welcome .suggestions {
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .suggestion-chip {
+      display: inline-flex;
+      align-items: center;
+      height: 30px;
+      padding: 0 12px;
+      background: var(--surface);
+      border: 1.5px solid rgba(var(--primary-rgb), 0.35);
+      border-radius: 100px;           /* pill */
+      font-size: var(--font-size-xs);
+      font-family: var(--font);
+      font-weight: 500;
+      color: var(--primary);
+      cursor: pointer;
+      white-space: nowrap;
+      line-height: 1;
+      user-select: none;
+      -webkit-user-select: none;
+      transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast),
+        transform 80ms ease,
+        box-shadow var(--transition-fast),
+        opacity var(--transition-fast);
+      /* Entrance: fade + slight vertical drift */
+      animation: chipIn 220ms ease both;
+    }
+
+    @keyframes chipIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* Stagger entrance for each chip */
+    .suggestion-chip:nth-child(1) { animation-delay: 0ms;   }
+    .suggestion-chip:nth-child(2) { animation-delay: 50ms;  }
+    .suggestion-chip:nth-child(3) { animation-delay: 100ms; }
+    .suggestion-chip:nth-child(4) { animation-delay: 150ms; }
+
+    .suggestion-chip:hover {
+      background: rgba(var(--primary-rgb), 0.08);
+      border-color: var(--primary);
+      box-shadow: 0 1px 4px rgba(var(--primary-rgb), 0.18);
+    }
+
+    .suggestion-chip:active {
+      transform: scale(0.95);
+      background: rgba(var(--primary-rgb), 0.14);
+      box-shadow: none;
+    }
+
+    .suggestion-chip:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .suggestion-chip:disabled,
+    .suggestions--disabled .suggestion-chip {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* ===================================================
        TYPING INDICATOR
     =================================================== */
 
@@ -615,7 +700,15 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
       padding: 10px 14px;
       display: flex;
       align-items: center;
+      gap: 8px;
+    }
+
+    /* Dots wrapper (class renamed from typing-bubble to typing-dots) */
+    .typing-dots {
+      display: flex;
+      align-items: center;
       gap: 4px;
+      flex-shrink: 0;
     }
 
     .typing-dot {
@@ -633,6 +726,25 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
     @keyframes typingBounce {
       0%, 60%, 100% { transform: translateY(0);   opacity: 0.4; }
       30%            { transform: translateY(-5px); opacity: 1;   }
+    }
+
+    /* Progress stage label — fades in when text is set */
+    .typing-label {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      transition:
+        opacity 350ms ease,
+        max-width 350ms ease;
+    }
+
+    .typing-label--visible {
+      opacity: 1;
+      max-width: 120px; /* generous cap; actual text is short */
     }
 
     /* ===================================================
@@ -713,7 +825,7 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
       outline: 2px solid var(--error);
       outline-offset: 1px;
     }
-  `}function fe(){return`
+  `}function ye(){return`
     /* ===================================================
        INPUT CONTAINER (outer wrapper — stacks input row + footer)
     =================================================== */
@@ -760,6 +872,14 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
     .input-wrapper.is-disabled {
       opacity: 0.55;
       pointer-events: none;
+      /* Subtle animated border shows the request is in-flight */
+      border-color: rgba(var(--primary-rgb), 0.4);
+      animation: inputPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes inputPulse {
+      0%, 100% { box-shadow: 0 0 0 0px rgba(var(--primary-rgb), 0); }
+      50%       { box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12); }
     }
 
     .input-textarea {
@@ -855,27 +975,27 @@ var Te=Object.defineProperty,$e=Object.defineProperties;var Ne=Object.getOwnProp
     .input-footer__text a:hover {
       text-decoration: underline;
     }
-  `}function c(t,r={},...s){const e=document.createElement(t);for(const[a,n]of Object.entries(r))if(n!=null)if(a==="class")e.className=n;else if(a==="style"&&typeof n=="string")e.style.cssText=n;else if(a==="html")e.innerHTML=n;else if(a.startsWith("on")&&typeof n=="function"){const i=a.slice(2).toLowerCase();e.addEventListener(i,n)}else e.setAttribute(a,n);for(const a of s.flat(1/0))a!=null&&(typeof a=="string"||typeof a=="number"?e.appendChild(document.createTextNode(String(a))):a instanceof Node&&e.appendChild(a));return e}function F(t){const s=Date.now()-t,e=Math.floor(s/6e4);return e<1?"just now":e<60?`${e} min ago`:new Date(t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}function O(t){const r=t.trim().split(/\s+/);return r.length===1?r[0][0].toUpperCase():(r[0][0]+r[r.length-1][0]).toUpperCase()}const be=`
+  `}function d(e,r={},...n){const t=document.createElement(e);for(const[a,i]of Object.entries(r))if(i!=null)if(a==="class")t.className=i;else if(a==="style"&&typeof i=="string")t.style.cssText=i;else if(a==="html")t.innerHTML=i;else if(a.startsWith("on")&&typeof i=="function"){const s=a.slice(2).toLowerCase();t.addEventListener(s,i)}else t.setAttribute(a,i);for(const a of n.flat(1/0))a!=null&&(typeof a=="string"||typeof a=="number"?t.appendChild(document.createTextNode(String(a))):a instanceof Node&&t.appendChild(a));return t}function K(e){const n=Date.now()-e,t=Math.floor(n/6e4);return t<1?"just now":t<60?`${t} min ago`:new Date(e).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}function M(e){const r=e.trim().split(/\s+/);return r.length===1?r[0][0].toUpperCase():(r[0][0]+r[r.length-1][0]).toUpperCase()}const ve=`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" aria-hidden="true">
   <path d="M4.913 2.658c2.075-.27 4.19-.408 6.337-.408 2.147 0 4.262.139 6.337.408 1.922.25 3.291 1.861 3.405 3.727a4.403 4.403 0 00-1.032-.211 50.89 50.89 0 00-8.42 0c-2.358.196-4.04 2.19-4.04 4.434v4.286a4.47 4.47 0 002.433 3.984L7.28 21.53A.75.75 0 016 21v-4.03a48.527 48.527 0 01-1.087-.128C2.905 16.58 1.5 14.833 1.5 12.862V6.638c0-1.97 1.405-3.718 3.413-3.979z"/>
   <path d="M15.75 7.5c-1.376 0-2.739.057-4.086.169C10.124 7.797 9 9.103 9 10.609v4.285c0 1.507 1.128 2.814 2.67 2.94 1.243.102 2.5.157 3.768.165l2.782 2.781a.75.75 0 001.28-.53v-2.39l.33-.026c1.542-.125 2.67-1.433 2.67-2.94v-4.286c0-1.505-1.124-2.811-2.664-2.94A49.392 49.392 0 0015.75 7.5z"/>
-</svg>`,q=`
+</svg>`,G=`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
   <line x1="18" y1="6" x2="6" y2="18"/>
   <line x1="6" y1="6" x2="18" y2="18"/>
-</svg>`,ge=`
+</svg>`,we=`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="17" height="17" aria-hidden="true">
   <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"/>
-</svg>`,me=`
+</svg>`,_e=`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
   <polyline points="6 9 12 15 18 9"/>
-</svg>`,he=`
+</svg>`,ke=`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true">
   <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
-</svg>`,xe=`
+</svg>`,Se=`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true">
   <polyline points="1 4 1 10 7 10"/>
   <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
-</svg>`;function ve(t,r,s){const e=c("span",{class:"launcher__icon launcher__icon--chat",html:be}),a=c("span",{class:"launcher__icon launcher__icon--close",html:q}),n=c("span",{class:"launcher__badge","aria-label":"unread messages",role:"status"});n.setAttribute("hidden","");const i=c("button",{class:"launcher",type:"button","aria-label":`Open chat with ${s.botName}`,"aria-expanded":"false","aria-haspopup":"dialog"},e,a,n),o=()=>r.emit("toggle");i.addEventListener("click",o);function u(f,m){const x=f.isOpen!==(m==null?void 0:m.isOpen),v=f.unreadCount!==(m==null?void 0:m.unreadCount);if(x&&(i.classList.toggle("is-open",f.isOpen),i.setAttribute("aria-expanded",String(f.isOpen)),i.setAttribute("aria-label",f.isOpen?"Close chat":`Open chat with ${s.botName}`)),v||x){const g=f.unreadCount;g>0&&!f.isOpen?(n.textContent=g>99?"99+":String(g),n.removeAttribute("hidden"),n.setAttribute("aria-label",`${g} unread message${g!==1?"s":""}`)):n.setAttribute("hidden","")}}const d=t.subscribe(u);function p(){d(),i.removeEventListener("click",o)}return{el:i,destroy:p}}function ye(t,r){let s;if(r.avatarUrl){const v=c("img",{class:"header__avatar-img",src:r.avatarUrl,alt:`${r.botName} avatar`});v.addEventListener("error",()=>{v.replaceWith(e())}),s=v}else s=e();function e(){return c("span",{class:"header__avatar-fallback","aria-hidden":"true"},O(r.botName))}const a=c("span",{class:"header__status-dot",title:"Online","aria-hidden":"true"}),n=c("div",{class:"header__avatar"},s,a),i=c("div",{class:"header__name"},r.botName),o=c("div",{class:"header__subtitle"},"Active now"),u=c("div",{class:"header__info"},i,o),d=c("button",{class:"header__btn",type:"button","aria-label":"Close chat",html:me}),p=()=>t.emit("close");d.addEventListener("click",p);const f=c("div",{class:"header__actions"},d),m=c("header",{class:"header",role:"banner"},n,u,f);function x(){d.removeEventListener("click",p)}return{el:m,destroy:x}}function we(t,r,s,e=!0){const a=t.role==="user";let n=null;if(!a)if(r.avatarUrl){const l=document.createElement("img");l.src=r.avatarUrl,l.alt="",n=c("div",{class:"bubble-avatar"},l),l.addEventListener("error",()=>{l.replaceWith(document.createTextNode(O(r.botName)))})}else n=c("div",{class:`bubble-avatar${e?"":" bubble-avatar--hidden"}`,"aria-hidden":"true"},O(r.botName));const i=c("div",{class:`bubble bubble--${a?"user":"assistant"}`});i.textContent=t.content;const o=c("div",{class:"bubble-retry-row","aria-live":"polite"});o.setAttribute("hidden","");const u=c("button",{class:"bubble-retry-btn",type:"button","aria-label":"Retry sending this message",html:`${xe} Retry`});u.addEventListener("click",()=>{s.emit("retry-message",{messageId:t.id,content:t.content})});const d=c("span",{class:"bubble-retry-row__text"},"Failed to send.");o.appendChild(d),o.appendChild(u);const p=c("div",{class:`bubble-meta bubble-meta--${a?"user":"assistant"}`,"aria-label":new Date(t.timestamp).toLocaleTimeString()});p.textContent=F(t.timestamp);const f=c("div",{class:"bubble-content"},i,o,p),m=a?[f]:[n,f],x=c("div",{class:`bubble-wrapper bubble-wrapper--${a?"user":"assistant"}`,role:"listitem","data-message-id":t.id},...m);v(t.status);function v(l){i.classList.remove("bubble--sending","bubble--failed"),l==="sending"?(i.classList.add("bubble--sending"),o.setAttribute("hidden","")):l==="failed"?(i.classList.add("bubble--failed"),o.removeAttribute("hidden")):o.setAttribute("hidden","")}function g(l){l.content!==t.content&&(i.textContent=l.content,t.content=l.content),l.status!==t.status&&(t.status=l.status,v(l.status)),l.timestamp!==t.timestamp&&(t.timestamp=l.timestamp,p.textContent=F(l.timestamp))}function _(l){n&&n.classList.toggle("bubble-avatar--hidden",!l)}return{el:x,update:g,setAvatarVisible:_}}function _e(t,r){let s;if(r.avatarUrl){s=c("div",{class:"bubble-avatar"});const u=document.createElement("img");u.src=r.avatarUrl,u.alt="",u.addEventListener("error",()=>{u.replaceWith(document.createTextNode(O(r.botName)))}),s.appendChild(u)}else s=c("div",{class:"bubble-avatar","aria-hidden":"true"},O(r.botName));const e=c("div",{class:"typing-bubble","aria-hidden":"true"},c("span",{class:"typing-dot"}),c("span",{class:"typing-dot"}),c("span",{class:"typing-dot"})),a=c("div",{class:"typing-indicator",role:"status","aria-label":`${r.botName} is typing`},s,e);a.setAttribute("hidden","");function n(u,d){if(u.status===(d==null?void 0:d.status))return;u.status==="loading"?a.removeAttribute("hidden"):a.setAttribute("hidden","")}const i=t.subscribe(n);function o(){i()}return{el:a,destroy:o}}function ke(t,r,s){const e=c("div",{class:"sr-only","aria-live":"polite","aria-atomic":"false",role:"log"});let a;if(s.avatarUrl){const b=document.createElement("img");b.src=s.avatarUrl,b.alt="",b.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:50%",a=c("div",{class:"messages-welcome__avatar"},b)}else a=c("div",{class:"messages-welcome__avatar"},O(s.botName));const n=c("div",{class:"messages-welcome","aria-hidden":"true"},a,c("p",{class:"messages-welcome__text"},s.welcomeMessage)),{el:i,destroy:o}=_e(t,s),u=c("div",{role:"list","aria-label":"Chat messages"}),d=c("div",{class:"messages-area","aria-label":"Messages",tabindex:"0"},n,u,i,e),p=new Map;let f=!1,m=0;d.addEventListener("scroll",()=>{f=d.scrollHeight-d.scrollTop-d.clientHeight>60},{passive:!0});function x(b=!1){(!f||b)&&requestAnimationFrame(()=>{d.scrollTop=d.scrollHeight})}function v(b){const T=new Set(b.map(y=>y.id));for(const[y,C]of p)T.has(y)||(C.el.remove(),p.delete(y));b.forEach((y,C)=>{var B;const $=C===b.length-1||((B=b[C+1])==null?void 0:B.role)!==y.role;if(p.has(y.id)){const{handle:L}=p.get(y.id);L.update(y),L.setAvatarVisible(y.role==="assistant"&&$)}else{const L=y.role==="assistant"&&$,W=we(y,s,r,L);u.appendChild(W.el),p.set(y.id,{el:W.el,handle:W}),y.role==="assistant"&&de(e,`${s.botName}: ${y.content}`)}})}function g(b,T){const y=b.messages!==(T==null?void 0:T.messages),C=b.status!==(T==null?void 0:T.status);if(y){const $=b.messages.length>0;n.setAttribute("aria-hidden",String($)),n.style.display=$?"none":"",v(b.messages),b.messages.length>m&&(f=!1,x(!0)),m=b.messages.length}C&&b.status==="loading"&&x(),d.setAttribute("aria-busy",String(b.status==="loading"))}const _=t.subscribe(g);g(t.getState(),null);function l(){_(),o(),p.clear()}return{el:d,scrollToBottom:x,destroy:l}}function Ee(t,r,s){const e=document.createElement("textarea");e.className="input-textarea",e.placeholder=`Message ${s.botName}…`,e.setAttribute("aria-label","Type a message"),e.setAttribute("rows","1"),e.setAttribute("maxlength","2000"),e.setAttribute("autocomplete","off"),e.setAttribute("spellcheck","true");const a=c("button",{class:"send-btn",type:"button","aria-label":"Send message",html:ge,disabled:""}),n=c("div",{class:"input-wrapper"},e),i=c("div",{class:"input-area",role:"form","aria-label":"Message input"},n,a),o=c("div",{class:"input-container"},i);s.hideAttribution||o.appendChild(c("div",{class:"input-footer"},c("span",{class:"input-footer__text"},"Powered by AI Receptionist")));function u(){e.style.height="auto",e.style.height=`${e.scrollHeight}px`}e.addEventListener("input",()=>{u(),d()});function d(){const l=e.value.trim().length>0;a.disabled=!l||f()}function p(){const l=e.value.trim();!l||f()||(r.emit("send",l),e.value="",e.style.height="auto",a.disabled=!0,e.focus())}a.addEventListener("click",p),e.addEventListener("keydown",l=>{l.key==="Enter"&&!l.shiftKey&&(l.preventDefault(),p())});function f(){return t.getState().status==="loading"}function m(l){e.disabled=l,n.classList.toggle("is-disabled",l),l?a.disabled=!0:d()}function x(l,b){l.status!==(b==null?void 0:b.status)&&m(l.status==="loading")}const v=t.subscribe(x);function g(){requestAnimationFrame(()=>e.focus())}function _(){v()}return{el:o,focus:g,destroy:_}}function Ae(t,r){const s=c("span",{class:"error-banner__icon",html:he,"aria-hidden":"true"}),e=c("span",{class:"error-banner__text"}),a=c("button",{class:"error-banner__retry",type:"button","aria-label":"Retry"},"Retry"),n=c("button",{class:"error-banner__dismiss",type:"button","aria-label":"Dismiss error",html:q}),i=c("div",{class:"error-banner",role:"alert","aria-live":"assertive"},s,e,a,n);i.setAttribute("hidden",""),a.addEventListener("click",()=>{r.emit("retry-last")}),n.addEventListener("click",()=>{r.emit("dismiss-error")});function o(p,f){p.error!==(f==null?void 0:f.error)&&(p.error?(e.textContent=p.error.message,a.style.display=p.error.retryable?"":"none",i.removeAttribute("hidden")):i.setAttribute("hidden",""))}const u=t.subscribe(o);function d(){u()}return{el:i,destroy:d}}function Se(t,r){var G,V;const s=document.createElement("style");s.textContent=[ce(r),ue(r),pe(),fe()].join(`
-`),t.appendChild(s);const e=te(r.apiKey,r.sessionTtlHours),a=e.load(),n=(G=a==null?void 0:a.sessionId)!=null?G:e.createNew(),i=(V=a==null?void 0:a.messages)!=null?V:[];r.sessionId=n;const o=Z(Q(n,i));let u=null;o.subscribe(h=>{clearTimeout(u),u=setTimeout(()=>{e.save(h.sessionId,h.messages)},300)});const d=ie(),{el:p}=ve(o,d,r),{el:f}=ye(d,r),{el:m,scrollToBottom:x}=ke(o,d,r),{el:v}=Ae(o,d),{el:g,focus:_}=Ee(o,d,r),l=document.createElement("div");l.className="widget-window",l.setAttribute("role","dialog"),l.setAttribute("aria-modal","true"),l.setAttribute("aria-label",`Chat with ${r.botName}`),l.setAttribute("aria-hidden","true"),l.appendChild(f),l.appendChild(m),l.appendChild(v),l.appendChild(g),t.appendChild(l),t.appendChild(p);const b=le(l);let T=p;d.on("toggle",()=>{const{isOpen:h}=o.getState();h?C():y()}),d.on("close",()=>{C()}),d.on("send",h=>{B(h)}),d.on("retry-last",()=>{const{messages:h}=o.getState(),k=[...h].reverse().find(w=>w.role==="user"&&w.status==="failed");k&&L(k)}),d.on("retry-message",({messageId:h,content:k})=>{const{messages:w}=o.getState(),N=w.find(I=>I.id===h);N&&L(N)}),d.on("dismiss-error",()=>{o.setState({error:null})});function y(){o.setState({isOpen:!0,unreadCount:0}),l.classList.add("is-open"),l.removeAttribute("aria-hidden"),b.activate(null),_(),x(!0),l.setAttribute("aria-label",`Chat with ${r.botName} — dialog`)}function C(){o.setState({isOpen:!1}),l.classList.remove("is-open"),l.setAttribute("aria-hidden","true"),b.deactivate(T)}const $=h=>{h.key==="Escape"&&o.getState().isOpen&&C()};document.addEventListener("keydown",$);async function B(h){if(o.getState().status==="loading")return;const w={id:U(),role:"user",content:h,timestamp:Date.now(),status:"sending"};o.setState(N=>({messages:[...N.messages,w],status:"loading",error:null})),await W(w)}async function L(h){o.setState(k=>({messages:k.messages.map(w=>w.id===h.id?R(A({},w),{status:"sending"}):w),status:"loading",error:null})),await W(h)}async function W(h){o.setState(k=>({messages:k.messages.map(w=>w.id===h.id?R(A({},w),{status:"sent"}):w)}));try{const k=o.getState().messages.filter(I=>I.status!=="failed"),w=await se(k,r),N={id:U(),role:"assistant",content:w,timestamp:Date.now(),status:"sent"};o.setState(I=>({messages:[...I.messages,N],status:"idle",error:null})),o.getState().isOpen||o.setState(I=>({unreadCount:I.unreadCount+1}))}catch(k){const w=ne(k);o.setState(N=>({messages:N.messages.map(I=>I.id===h.id?R(A({},I),{status:"failed"}):I),status:"error",error:{message:w.message,retryable:w.retryable,failedMessageId:h.id}})),console.error("[AI Widget] API call failed:",k)}}function Ie(){document.removeEventListener("keydown",$),d.clear(),u&&clearTimeout(u)}return{open:y,close:C,toggle:()=>o.getState().isOpen?C():y(),destroy:Ie,on:(h,k)=>d.on(h,k),off:(h,k)=>d.off(h,k),getState:()=>A({},o.getState())}}const K="ai-receptionist-widget-host";function Ce(t){if(document.getElementById(K))return console.warn("[AI Widget] Already initialized. Call window.LinorWidget.destroy() first to re-mount."),typeof window!="undefined"&&window.LinorWidget||null;const r=document.createElement("div");r.id=K,r.style.cssText=["position: fixed","z-index: 2147483647","top: 0","left: 0","width: 0","height: 0","overflow: visible","pointer-events: none"].join("; ");const s=r.attachShadow({mode:"closed"});document.body.appendChild(r);const e=Se(s,t),a=e.destroy;return e.destroy=()=>{a(),r.remove(),typeof window!="undefined"&&window.LinorWidget===e&&delete window.LinorWidget},e}const ze=typeof document!="undefined"?document.currentScript:null;function Y(){const t=S(ze);if(!t.apiKey||!t.apiUrl)return;const r=Ce(t);r&&typeof window!="undefined"&&(window.LinorWidget=r)}typeof document!="undefined"&&(document.readyState==="loading"?document.addEventListener("DOMContentLoaded",Y,{once:!0}):Y())})();
+</svg>`;function Ae(e,r,n){const t=d("span",{class:"launcher__icon launcher__icon--chat",html:ve}),a=d("span",{class:"launcher__icon launcher__icon--close",html:G}),i=d("span",{class:"launcher__badge","aria-label":"unread messages",role:"status"});i.setAttribute("hidden","");const s=d("button",{class:"launcher",type:"button","aria-label":`Open chat with ${n.botName}`,"aria-expanded":"false","aria-haspopup":"dialog"},t,a,i),o=()=>r.emit("toggle");s.addEventListener("click",o);function h(l,b){const g=l.isOpen!==(b==null?void 0:b.isOpen),m=l.unreadCount!==(b==null?void 0:b.unreadCount);if(g&&(s.classList.toggle("is-open",l.isOpen),s.setAttribute("aria-expanded",String(l.isOpen)),s.setAttribute("aria-label",l.isOpen?"Close chat":`Open chat with ${n.botName}`)),m||g){const v=l.unreadCount;v>0&&!l.isOpen?(i.textContent=v>99?"99+":String(v),i.removeAttribute("hidden"),i.setAttribute("aria-label",`${v} unread message${v!==1?"s":""}`)):i.setAttribute("hidden","")}}const u=e.subscribe(h);function p(){u(),s.removeEventListener("click",o)}return{el:s,destroy:p}}function Ee(e,r){let n;if(r.avatarUrl){const m=d("img",{class:"header__avatar-img",src:r.avatarUrl,alt:`${r.botName} avatar`});m.addEventListener("error",()=>{m.replaceWith(t())}),n=m}else n=t();function t(){return d("span",{class:"header__avatar-fallback","aria-hidden":"true"},M(r.botName))}const a=d("span",{class:"header__status-dot",title:"Online","aria-hidden":"true"}),i=d("div",{class:"header__avatar"},n,a),s=d("div",{class:"header__name"},r.botName),o=d("div",{class:"header__subtitle"},"Active now"),h=d("div",{class:"header__info"},s,o),u=d("button",{class:"header__btn",type:"button","aria-label":"Close chat",html:_e}),p=()=>e.emit("close");u.addEventListener("click",p);const l=d("div",{class:"header__actions"},u),b=d("header",{class:"header",role:"banner"},i,h,l);function g(){u.removeEventListener("click",p)}return{el:b,destroy:g}}function V({suggestions:e=[],bus:r,messageId:n=null,ariaLabel:t="Suggested replies"}){const a=d("div",{class:"suggestions",role:"group","aria-label":t});let i=n,s=!1;function o(l){if(a.textContent="",!Array.isArray(l)||l.length===0){a.setAttribute("hidden","");return}a.removeAttribute("hidden"),l.forEach(b=>{const g=d("button",{type:"button",class:"suggestion-chip","aria-label":`Send: ${b}`});g.textContent=b,g.addEventListener("click",()=>{s||(u(!0),r.emit("suggestion-click",{text:b,messageId:i}))}),a.appendChild(g)})}function h({suggestions:l=[],messageId:b=i}={}){i=b,s=!1,o(l)}function u(l){s=!!l,a.classList.toggle("suggestions--disabled",s);for(const b of a.querySelectorAll(".suggestion-chip"))b.disabled=s,b.setAttribute("aria-disabled",String(s))}function p(){a.textContent=""}return o(e),{el:a,update:h,setDisabled:u,destroy:p}}function Ce(e,r,n,t=!0){const a=e.role==="user";let i=null;if(!a)if(r.avatarUrl){const c=document.createElement("img");c.src=r.avatarUrl,c.alt="",i=d("div",{class:"bubble-avatar"},c),c.addEventListener("error",()=>{c.replaceWith(document.createTextNode(M(r.botName)))})}else i=d("div",{class:`bubble-avatar${t?"":" bubble-avatar--hidden"}`,"aria-hidden":"true"},M(r.botName));const s=d("div",{class:`bubble bubble--${a?"user":"assistant"}`});s.textContent=e.content;const o=d("div",{class:"bubble-retry-row","aria-live":"polite"});o.setAttribute("hidden","");const h=d("button",{class:"bubble-retry-btn",type:"button","aria-label":"Retry sending this message",html:`${Se} Retry`});h.addEventListener("click",()=>{n.emit("retry-message",{messageId:e.id,content:e.content})});const u=d("span",{class:"bubble-retry-row__text"},"Failed to send.");o.appendChild(u),o.appendChild(h);const p=d("div",{class:`bubble-meta bubble-meta--${a?"user":"assistant"}`,"aria-label":new Date(e.timestamp).toLocaleTimeString()});p.textContent=K(e.timestamp);let l=null;a||(l=V({suggestions:Array.isArray(e.suggestions)?e.suggestions:[],bus:n,messageId:e.id}));const b=[s];l&&b.push(l.el),b.push(o,p);const g=d("div",{class:"bubble-content"},...b),m=a?[g]:[i,g],v=d("div",{class:`bubble-wrapper bubble-wrapper--${a?"user":"assistant"}`,role:"listitem","data-message-id":e.id},...m);A(e.status);function A(c){s.classList.remove("bubble--sending","bubble--failed"),c==="sending"?(s.classList.add("bubble--sending"),o.setAttribute("hidden","")):c==="failed"?(s.classList.add("bubble--failed"),o.removeAttribute("hidden")):o.setAttribute("hidden","")}function f(c){if(c.content!==e.content&&(s.textContent=c.content,e.content=c.content),c.status!==e.status&&(e.status=c.status,A(c.status)),c.timestamp!==e.timestamp&&(e.timestamp=c.timestamp,p.textContent=K(c.timestamp)),l){const S=Array.isArray(c.suggestions)?c.suggestions:[],y=Array.isArray(e.suggestions)?e.suggestions:[];(S.length!==y.length||S.some(($,N)=>$!==y[N]))&&(e.suggestions=S,l.update({suggestions:S,messageId:e.id}))}}function w(c){i&&i.classList.toggle("bubble-avatar--hidden",!c)}return{el:v,update:f,setAvatarVisible:w}}const Ie=[{delayMs:1500,text:"Thinking…"},{delayMs:5e3,text:"Processing…"},{delayMs:1e4,text:"Almost ready…"}];function ze(e,r){let n;if(r.avatarUrl){n=d("div",{class:"bubble-avatar"});const g=document.createElement("img");g.src=r.avatarUrl,g.alt="",g.addEventListener("error",()=>{g.replaceWith(document.createTextNode(M(r.botName)))}),n.appendChild(g)}else n=d("div",{class:"bubble-avatar","aria-hidden":"true"},M(r.botName));const t=d("div",{class:"typing-dots","aria-hidden":"true"},d("span",{class:"typing-dot"}),d("span",{class:"typing-dot"}),d("span",{class:"typing-dot"})),a=d("span",{class:"typing-label","aria-live":"polite"}),i=d("div",{class:"typing-bubble"},t,a),s=d("div",{class:"typing-indicator",role:"status","aria-label":`${r.botName} is thinking`},n,i);s.setAttribute("hidden","");let o=[];function h(){a.textContent="",a.classList.remove("typing-label--visible"),o=Ie.map(({delayMs:g,text:m})=>setTimeout(()=>{a.textContent=m,a.classList.add("typing-label--visible"),s.setAttribute("aria-label",`${r.botName}: ${m}`)},g))}function u(){o.forEach(clearTimeout),o=[],a.textContent="",a.classList.remove("typing-label--visible"),s.setAttribute("aria-label",`${r.botName} is thinking`)}function p(g,m){g.status!==(m==null?void 0:m.status)&&(g.status==="loading"?(s.removeAttribute("hidden"),h()):(s.setAttribute("hidden",""),u()))}const l=e.subscribe(p);function b(){u(),l()}return{el:s,destroy:b}}function Te(e,r,n){const t=d("div",{class:"sr-only","aria-live":"polite","aria-atomic":"false",role:"log"});let a;if(n.avatarUrl){const c=document.createElement("img");c.src=n.avatarUrl,c.alt="",c.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:50%",a=d("div",{class:"messages-welcome__avatar"},c)}else a=d("div",{class:"messages-welcome__avatar"},M(n.botName));const i=V({suggestions:Array.isArray(n.defaultSuggestions)?n.defaultSuggestions:[],bus:r,messageId:null,ariaLabel:"Quick start options"}),s=d("div",{class:"messages-welcome","aria-hidden":"true"},a,d("p",{class:"messages-welcome__text"},n.welcomeMessage),i.el),{el:o,destroy:h}=ze(e,n),u=d("div",{role:"list","aria-label":"Chat messages"}),p=d("div",{class:"messages-area","aria-label":"Messages",tabindex:"0"},s,u,o,t),l=new Map;let b=!1,g=0;p.addEventListener("scroll",()=>{b=p.scrollHeight-p.scrollTop-p.clientHeight>60},{passive:!0});function m(c=!1){(!b||c)&&requestAnimationFrame(()=>{p.scrollTop=p.scrollHeight})}function v(c){const S=new Set(c.map(y=>y.id));for(const[y,$]of l)S.has(y)||($.el.remove(),l.delete(y));c.forEach((y,$)=>{var B;const N=$===c.length-1||((B=c[$+1])==null?void 0:B.role)!==y.role;if(l.has(y.id)){const{handle:L}=l.get(y.id);L.update(y),L.setAvatarVisible(y.role==="assistant"&&N)}else{const L=y.role==="assistant"&&N,D=Ce(y,n,r,L);u.appendChild(D.el),l.set(y.id,{el:D.el,handle:D}),y.role==="assistant"&&ge(t,`${n.botName}: ${y.content}`)}})}function A(c,S){const y=c.messages!==(S==null?void 0:S.messages),$=c.status!==(S==null?void 0:S.status);if(y){const N=c.messages.length>0;s.setAttribute("aria-hidden",String(N)),s.style.display=N?"none":"",v(c.messages),c.messages.length>g&&(b=!1,m(!0)),g=c.messages.length}$&&c.status==="loading"&&m(),p.setAttribute("aria-busy",String(c.status==="loading"))}const f=e.subscribe(A);A(e.getState(),null);function w(){f(),h(),i.destroy(),l.clear()}return{el:p,scrollToBottom:m,destroy:w}}function $e(e,r,n){const t=document.createElement("textarea");t.className="input-textarea",t.placeholder=`Message ${n.botName}…`,t.setAttribute("aria-label","Type a message"),t.setAttribute("rows","1"),t.setAttribute("maxlength","2000"),t.setAttribute("autocomplete","off"),t.setAttribute("spellcheck","true");const a=d("button",{class:"send-btn",type:"button","aria-label":"Send message",html:we,disabled:""}),i=d("div",{class:"input-wrapper"},t),s=d("div",{class:"input-area",role:"form","aria-label":"Message input"},i,a),o=d("div",{class:"input-container"},s);n.hideAttribution||o.appendChild(d("div",{class:"input-footer"},d("span",{class:"input-footer__text"},"Powered by AI Receptionist")));function h(){t.style.height="auto",t.style.height=`${t.scrollHeight}px`}t.addEventListener("input",()=>{h(),u()});function u(){const f=t.value.trim().length>0;a.disabled=!f||l()}function p(){const f=t.value.trim();!f||l()||(r.emit("send",f),t.value="",t.style.height="auto",a.disabled=!0,t.focus())}a.addEventListener("click",p),t.addEventListener("keydown",f=>{f.key==="Enter"&&!f.shiftKey&&(f.preventDefault(),p())});function l(){return e.getState().status==="loading"}function b(f){t.disabled=f,i.classList.toggle("is-disabled",f),f?a.disabled=!0:u()}function g(f,w){f.status!==(w==null?void 0:w.status)&&b(f.status==="loading")}const m=e.subscribe(g);function v(){requestAnimationFrame(()=>t.focus())}function A(){m()}return{el:o,focus:v,destroy:A}}function Ne(e,r){const n=d("span",{class:"error-banner__icon",html:ke,"aria-hidden":"true"}),t=d("span",{class:"error-banner__text"}),a=d("button",{class:"error-banner__retry",type:"button","aria-label":"Retry"},"Retry"),i=d("button",{class:"error-banner__dismiss",type:"button","aria-label":"Dismiss error",html:G}),s=d("div",{class:"error-banner",role:"alert","aria-live":"assertive"},n,t,a,i);s.setAttribute("hidden",""),a.addEventListener("click",()=>{r.emit("retry-last")}),i.addEventListener("click",()=>{r.emit("dismiss-error")});function o(p,l){p.error!==(l==null?void 0:l.error)&&(p.error?(t.textContent=p.error.message,a.style.display=p.error.retryable?"":"none",s.removeAttribute("hidden")):s.setAttribute("hidden",""))}const h=e.subscribe(o);function u(){h()}return{el:s,destroy:u}}function Le(e,r){var Q,Z;const n=document.createElement("style");n.textContent=[he(r),me(r),xe(),ye()].join(`
+`),e.appendChild(n);const t=ie(r.apiKey,r.sessionTtlHours),a=t.load(),i=(Q=a==null?void 0:a.sessionId)!=null?Q:t.createNew(),s=(Z=a==null?void 0:a.messages)!=null?Z:[];r.sessionId=i;const o=ae(ne(i,s));let h=null;o.subscribe(x=>{clearTimeout(h),h=setTimeout(()=>{t.save(x.sessionId,x.messages)},300)});const u=pe(),{el:p}=Ae(o,u,r),{el:l}=Ee(u,r),{el:b,scrollToBottom:g}=Te(o,u,r),{el:m}=Ne(o,u),{el:v,focus:A}=$e(o,u,r),f=document.createElement("div");f.className="widget-window",f.setAttribute("role","dialog"),f.setAttribute("aria-modal","true"),f.setAttribute("aria-label",`Chat with ${r.botName}`),f.setAttribute("aria-hidden","true"),f.appendChild(l),f.appendChild(b),f.appendChild(m),f.appendChild(v),e.appendChild(f),e.appendChild(p);const w=be(f);let c=p;u.on("toggle",()=>{const{isOpen:x}=o.getState();x?y():S()}),u.on("close",()=>{y()}),u.on("send",x=>{N(x)}),u.on("retry-last",()=>{const{messages:x}=o.getState(),k=[...x].reverse().find(_=>_.role==="user"&&_.status==="failed");k&&B(k)}),u.on("retry-message",({messageId:x,content:k})=>{const{messages:_}=o.getState(),z=_.find(O=>O.id===x);z&&B(z)}),u.on("dismiss-error",()=>{o.setState({error:null})}),u.on("suggestion-click",({text:x,messageId:k})=>{k&&o.setState(_=>({messages:_.messages.map(z=>z.id===k?W(E({},z),{suggestions:[]}):z)})),N(x)});function S(){o.setState({isOpen:!0,unreadCount:0}),f.classList.add("is-open"),f.removeAttribute("aria-hidden"),w.activate(null),A(),g(!0),f.setAttribute("aria-label",`Chat with ${r.botName} — dialog`)}function y(){o.setState({isOpen:!1}),f.classList.remove("is-open"),f.setAttribute("aria-hidden","true"),w.deactivate(c)}const $=x=>{x.key==="Escape"&&o.getState().isOpen&&y()};document.addEventListener("keydown",$);async function N(x){if(o.getState().status==="loading")return;const _={id:P(),role:"user",content:x,timestamp:Date.now(),status:"sending"};o.setState(z=>({messages:[...z.messages,_],status:"loading",error:null})),await L(_)}async function B(x){o.setState(k=>({messages:k.messages.map(_=>_.id===x.id?W(E({},_),{status:"sending"}):_),status:"loading",error:null})),await L(x)}async function L(x){o.setState(k=>({messages:k.messages.map(_=>_.id===x.id?W(E({},_),{status:"sent"}):_)}));try{const k=o.getState().messages.filter(H=>H.status!=="failed"),{reply:_,suggestions:z}=await ce(k,r),O={id:P(),role:"assistant",content:_,timestamp:Date.now(),status:"sent",suggestions:z};o.setState(H=>({messages:[...H.messages.map(j=>{var ee;return j.role==="assistant"&&((ee=j.suggestions)!=null&&ee.length)?W(E({},j),{suggestions:[]}):j}),O],status:"idle",error:null})),o.getState().isOpen||o.setState(H=>({unreadCount:H.unreadCount+1}))}catch(k){const _=de(k);o.setState(z=>({messages:z.messages.map(O=>O.id===x.id?W(E({},O),{status:"failed"}):O),status:"error",error:{message:_.message,retryable:_.retryable,failedMessageId:x.id}})),console.error("[AI Widget] API call failed:",k)}}function D(){document.removeEventListener("keydown",$),u.clear(),h&&clearTimeout(h)}return{open:S,close:y,toggle:()=>o.getState().isOpen?y():S(),destroy:D,on:(x,k)=>u.on(x,k),off:(x,k)=>u.off(x,k),getState:()=>E({},o.getState())}}const X="ai-receptionist-widget-host";function Oe(e){if(document.getElementById(X))return console.warn("[AI Widget] Already initialized. Call window.LinorWidget.destroy() first to re-mount."),typeof window!="undefined"&&window.LinorWidget||null;const r=document.createElement("div");r.id=X,r.style.cssText=["position: fixed","z-index: 2147483647","top: 0","left: 0","width: 0","height: 0","overflow: visible","pointer-events: none"].join("; ");const n=r.attachShadow({mode:"closed"});document.body.appendChild(r);const t=Le(n,e),a=t.destroy;return t.destroy=()=>{a(),r.remove(),typeof window!="undefined"&&window.LinorWidget===t&&delete window.LinorWidget},t}const We=typeof document!="undefined"?document.currentScript:null;function J(){const e=I(We);if(!e.apiKey||!e.apiUrl)return;const r=Oe(e);r&&typeof window!="undefined"&&(window.LinorWidget=r)}typeof document!="undefined"&&(document.readyState==="loading"?document.addEventListener("DOMContentLoaded",J,{once:!0}):J())})();
 //# sourceMappingURL=widget.js.map

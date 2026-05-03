@@ -157,6 +157,19 @@ export function createWidget(shadow, config) {
     store.setState({ error: null });
   });
 
+  bus.on('suggestion-click', ({ text, messageId }) => {
+    // Collapse the chips on the originating message immediately so the user
+    // can't double-tap; then route through the normal send flow.
+    if (messageId) {
+      store.setState((s) => ({
+        messages: s.messages.map((m) =>
+          m.id === messageId ? { ...m, suggestions: [] } : m
+        ),
+      }));
+    }
+    handleSend(text);
+  });
+
   // ── 9. Open / close ────────────────────────────────────────────────────────
 
   function openWidget() {
@@ -237,7 +250,7 @@ export function createWidget(shadow, config) {
         (m) => m.status !== 'failed'
       );
 
-      const reply = await sendMessage(currentMessages, config);
+      const { reply, suggestions } = await sendMessage(currentMessages, config);
 
       const assistantMessage = {
         id: generateId(),
@@ -245,10 +258,20 @@ export function createWidget(shadow, config) {
         content: reply,
         timestamp: Date.now(),
         status: 'sent',
+        suggestions, // rendered as chips below this bubble if non-empty
       };
 
+      // Clear suggestions from every earlier assistant message — only the
+      // most recent turn's chips are ever active (prevents stale chips).
       store.setState((s) => ({
-        messages: [...s.messages, assistantMessage],
+        messages: [
+          ...s.messages.map((m) =>
+            m.role === 'assistant' && m.suggestions?.length
+              ? { ...m, suggestions: [] }
+              : m
+          ),
+          assistantMessage,
+        ],
         status: 'idle',
         error: null,
       }));

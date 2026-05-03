@@ -10,9 +10,12 @@
  * }
  *
  * Expected response format (any of):
- * { reply: string }
- * { message: string }
+ * { reply: string, suggestions?: string[] }
+ * { message: string, suggestions?: string[] }
  * { content: string }
+ *
+ * `suggestions` is optional — when present, the widget renders them as
+ * tap-to-send quick-reply chips below the assistant's message.
  *
  * Both 'x-api-key' and 'Authorization: Bearer <apiKey>' headers are sent.
  */
@@ -24,7 +27,7 @@ import { fetchWithTimeout, fetchWithRetry, ApiError } from './client.js';
  *
  * @param {Array<{ role: string, content: string }>} messages
  * @param {object} config — widget config (apiKey, apiUrl, sessionId, maxRetries, requestTimeoutMs)
- * @returns {Promise<string>} The assistant's reply text
+ * @returns {Promise<{ reply: string, suggestions: string[] }>}
  */
 export async function sendMessage(messages, config) {
   const { apiKey, apiUrl, sessionId, maxRetries, requestTimeoutMs } = config;
@@ -84,8 +87,39 @@ export async function sendMessage(messages, config) {
       throw new ApiError('Unrecognised response format from API', 200);
     }
 
-    return reply.trim();
+    return {
+      reply: reply.trim(),
+      suggestions: sanitizeSuggestions(data.suggestions),
+    };
   };
 
   return fetchWithRetry(call, maxRetries);
+}
+
+/**
+ * Sanitize a suggestions array coming from the API.
+ * - Strings only, trimmed, non-empty
+ * - De-duplicated (case-insensitive)
+ * - Individually capped at 60 chars to prevent UI-breaking payloads
+ * - Hard cap at 4 entries (matches backend contract + UI density)
+ *
+ * @param {unknown} raw
+ * @returns {string[]}
+ */
+function sanitizeSuggestions(raw) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    const v = item.trim();
+    if (!v) continue;
+    const truncated = v.length > 60 ? v.slice(0, 60).trim() : v;
+    const key = truncated.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(truncated);
+    if (out.length >= 4) break;
+  }
+  return out;
 }

@@ -52,6 +52,14 @@ export function inputStyles() {
     .input-wrapper.is-disabled {
       opacity: 0.55;
       pointer-events: none;
+      /* Subtle animated border shows the request is in-flight */
+      border-color: rgba(var(--primary-rgb), 0.4);
+      animation: inputPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes inputPulse {
+      0%, 100% { box-shadow: 0 0 0 0px rgba(var(--primary-rgb), 0); }
+      50%       { box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12); }
     }
 
     .input-textarea {

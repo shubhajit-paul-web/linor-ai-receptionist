@@ -15,6 +15,7 @@ import { h, getInitials } from '../../utils/dom.js';
 import { announce } from '../../utils/a11y.js';
 import { createBubble } from './bubble.js';
 import { createTypingIndicator } from './typing.js';
+import { createSuggestions } from './suggestions.js';
 
 /**
  * @param {object} store  — reactive state store
@@ -49,11 +50,20 @@ export function createMessages(store, bus, config) {
     );
   }
 
+  // Starter chips — only visible in the empty welcome state.
+  const starterChips = createSuggestions({
+    suggestions: Array.isArray(config.defaultSuggestions) ? config.defaultSuggestions : [],
+    bus,
+    messageId: null,
+    ariaLabel: 'Quick start options',
+  });
+
   const welcomeEl = h(
     'div',
     { class: 'messages-welcome', 'aria-hidden': 'true' },
     welcomeAvatarEl,
-    h('p', { class: 'messages-welcome__text' }, config.welcomeMessage)
+    h('p', { class: 'messages-welcome__text' }, config.welcomeMessage),
+    starterChips.el
   );
 
   // ── Typing indicator ──────────────────────────────────────────────────────
@@ -185,6 +195,7 @@ export function createMessages(store, bus, config) {
   function destroy() {
     unsubscribe();
     destroyTyping();
+    starterChips.destroy();
     bubbleMap.clear();
   }
 

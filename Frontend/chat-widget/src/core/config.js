@@ -27,6 +27,14 @@ export const DEFAULTS = {
   sessionTtlHours: 24,
   maxRetries: 3,
   requestTimeoutMs: 30000,
+  // Quick-reply chips shown on the empty welcome screen before the first message.
+  // Set to [] to hide entirely.
+  defaultSuggestions: [
+    'Book an appointment',
+    'Working hours',
+    'Services offered',
+    'Contact info',
+  ],
 };
 
 /**
@@ -90,6 +98,17 @@ export function parseConfig(scriptEl) {
     const sessTtl = getInt('session-ttl-hours'); if (sessTtl !== undefined) attrCfg.sessionTtlHours = sessTtl;
     const retries = getInt('max-retries'); if (retries !== undefined) attrCfg.maxRetries = retries;
     const timeout = getInt('request-timeout-ms'); if (timeout !== undefined) attrCfg.requestTimeoutMs = timeout;
+
+    // defaultSuggestions: pipe-separated to avoid collisions with natural commas
+    //   data-default-suggestions="Book an appointment|Working hours|Services"
+    const rawSuggestions = get('default-suggestions');
+    if (rawSuggestions != null) {
+      attrCfg.defaultSuggestions = rawSuggestions
+        .split('|')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 4);
+    }
   }
 
   // Merge priority: defaults < __AI_WIDGET_CONFIG__ < LinorConfig < data-* attrs

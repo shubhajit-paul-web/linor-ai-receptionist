@@ -105,7 +105,7 @@ function SkeletonFaqCard() {
 
 const SNIPPET_TEMPLATES = {
   HTML: (apiKey, apiUrl) =>
-`<!-- Paste before </body> on every page — one line is all you need -->
+`<!-- Linor AI Receptionist: paste before the closing body tag on every page. -->
 <script
   src="${CDN_URL}"
   data-api-key="${apiKey}"
@@ -133,7 +133,7 @@ function linor_chatbot_script() { ?>
 add_action( 'wp_footer', 'linor_chatbot_script' );`,
 
   Webflow: (apiKey, apiUrl) =>
-`<!-- Site Settings → Custom Code → Before </body> tag -->
+`<!-- Site Settings > Custom Code > Footer Code section -->
 <script>
   window.LinorConfig = {
     apiKey:  "${apiKey}",

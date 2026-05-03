@@ -14,6 +14,7 @@
 
 import { h, escapeHtml, formatTime, getInitials } from '../../utils/dom.js';
 import { ICON_RETRY } from '../../utils/icons.js';
+import { createSuggestions } from './suggestions.js';
 
 /**
  * Create a message bubble element.
@@ -86,9 +87,24 @@ export function createBubble(message, config, bus, showAvatar = true) {
   });
   metaEl.textContent = formatTime(message.timestamp);
 
-  // ── Content wrapper (bubble + retry + meta) ───────────────────────────────
+  // ── Suggestion chips (assistant only) ─────────────────────────────────────
+  // Created for every assistant bubble; self-hides when list is empty.
 
-  const contentEl = h('div', { class: 'bubble-content' }, textEl, retryRow, metaEl);
+  let suggestionsHandle = null;
+  if (!isUser) {
+    suggestionsHandle = createSuggestions({
+      suggestions: Array.isArray(message.suggestions) ? message.suggestions : [],
+      bus,
+      messageId: message.id,
+    });
+  }
+
+  // ── Content wrapper (bubble + chips + retry + meta) ───────────────────────
+
+  const contentChildren = [textEl];
+  if (suggestionsHandle) contentChildren.push(suggestionsHandle.el);
+  contentChildren.push(retryRow, metaEl);
+  const contentEl = h('div', { class: 'bubble-content' }, ...contentChildren);
 
   // ── Wrapper ───────────────────────────────────────────────────────────────
 
@@ -141,6 +157,19 @@ export function createBubble(message, config, bus, showAvatar = true) {
     if (updatedMessage.timestamp !== message.timestamp) {
       message.timestamp = updatedMessage.timestamp;
       metaEl.textContent = formatTime(updatedMessage.timestamp);
+    }
+
+    // Suggestions: cheap value-compare avoids spurious DOM churn.
+    if (suggestionsHandle) {
+      const nextList = Array.isArray(updatedMessage.suggestions)
+        ? updatedMessage.suggestions
+        : [];
+      const prevList = Array.isArray(message.suggestions) ? message.suggestions : [];
+      if (nextList.length !== prevList.length ||
+          nextList.some((v, i) => v !== prevList[i])) {
+        message.suggestions = nextList;
+        suggestionsHandle.update({ suggestions: nextList, messageId: message.id });
+      }
     }
   }
 

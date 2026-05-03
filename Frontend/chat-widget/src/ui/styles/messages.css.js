@@ -352,6 +352,91 @@ export function messagesStyles() {
     }
 
     /* ===================================================
+       SUGGESTION CHIPS
+    =================================================== */
+
+    /* Row container — horizontal, wraps on very narrow screens */
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .suggestions[hidden] {
+      display: none;
+    }
+
+    /* Welcome-state chips: centered so they sit nicely under the greeting */
+    .messages-welcome .suggestions {
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .suggestion-chip {
+      display: inline-flex;
+      align-items: center;
+      height: 30px;
+      padding: 0 12px;
+      background: var(--surface);
+      border: 1.5px solid rgba(var(--primary-rgb), 0.35);
+      border-radius: 100px;           /* pill */
+      font-size: var(--font-size-xs);
+      font-family: var(--font);
+      font-weight: 500;
+      color: var(--primary);
+      cursor: pointer;
+      white-space: nowrap;
+      line-height: 1;
+      user-select: none;
+      -webkit-user-select: none;
+      transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast),
+        transform 80ms ease,
+        box-shadow var(--transition-fast),
+        opacity var(--transition-fast);
+      /* Entrance: fade + slight vertical drift */
+      animation: chipIn 220ms ease both;
+    }
+
+    @keyframes chipIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* Stagger entrance for each chip */
+    .suggestion-chip:nth-child(1) { animation-delay: 0ms;   }
+    .suggestion-chip:nth-child(2) { animation-delay: 50ms;  }
+    .suggestion-chip:nth-child(3) { animation-delay: 100ms; }
+    .suggestion-chip:nth-child(4) { animation-delay: 150ms; }
+
+    .suggestion-chip:hover {
+      background: rgba(var(--primary-rgb), 0.08);
+      border-color: var(--primary);
+      box-shadow: 0 1px 4px rgba(var(--primary-rgb), 0.18);
+    }
+
+    .suggestion-chip:active {
+      transform: scale(0.95);
+      background: rgba(var(--primary-rgb), 0.14);
+      box-shadow: none;
+    }
+
+    .suggestion-chip:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .suggestion-chip:disabled,
+    .suggestions--disabled .suggestion-chip {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* ===================================================
        TYPING INDICATOR
     =================================================== */
 
@@ -374,7 +459,15 @@ export function messagesStyles() {
       padding: 10px 14px;
       display: flex;
       align-items: center;
+      gap: 8px;
+    }
+
+    /* Dots wrapper (class renamed from typing-bubble to typing-dots) */
+    .typing-dots {
+      display: flex;
+      align-items: center;
       gap: 4px;
+      flex-shrink: 0;
     }
 
     .typing-dot {
@@ -392,6 +485,25 @@ export function messagesStyles() {
     @keyframes typingBounce {
       0%, 60%, 100% { transform: translateY(0);   opacity: 0.4; }
       30%            { transform: translateY(-5px); opacity: 1;   }
+    }
+
+    /* Progress stage label — fades in when text is set */
+    .typing-label {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      transition:
+        opacity 350ms ease,
+        max-width 350ms ease;
+    }
+
+    .typing-label--visible {
+      opacity: 1;
+      max-width: 120px; /* generous cap; actual text is short */
     }
 
     /* ===================================================
