@@ -29,14 +29,13 @@ import useClinicStore from "../store/useClinicStore";
 import { CopyButton } from "../components/shared/CopyButton";
 import { ConfirmModal } from "../components/shared/ConfirmModal";
 import { useToast } from "../components/shared/Toast";
-import { MOCK_API_LOGS } from "../lib/mockData";
 import { changePasswordSchema, addDomainSchema } from "../lib/validators";
 import { maskApiKey, cn } from "../lib/utils";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const API_USAGE_LIMIT   = 10_000; // Monthly request cap (plan limit)
-const API_USAGE_CURRENT = 1_240;  // Mock: requests used this month
+const API_USAGE_CURRENT = 0;      // Will be populated from API
 const LOGS_PER_PAGE     = 8;      // Activity log rows per page
 
 /** Section anchors for the sticky nav */
@@ -59,15 +58,6 @@ function getRelativeTime(iso) {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
-}
-
-/**
- * Generates a deterministic mock response duration for display only.
- * Not derived from real data — purely for visual richness.
- */
-function getMockDuration(id) {
-  const i = parseInt(id.replace("log-", ""), 10) || 0;
-  return 42 + ((i * 17 + 11) % 200); // range: 42–241 ms
 }
 
 /** Evaluates password complexity. Returns score (0–5), label, and bar color. */
@@ -437,6 +427,7 @@ export default function ApiSecurity() {
   const [activeSection,  setActiveSection]  = useState("overview");
   const [isLoading,      setIsLoading]      = useState(true);
   const [currentPage,    setCurrentPage]    = useState(1);
+  const [apiLogs,        setApiLogs]        = useState([]);
 
   // Load API key on mount (original logic preserved)
   useEffect(() => {
@@ -480,12 +471,12 @@ export default function ApiSecurity() {
 
   // ── Derived: activity log analytics ───────────────────────────────────────
   const logAnalytics = useMemo(() => {
-    const total      = MOCK_API_LOGS.length;
-    const errorCount = MOCK_API_LOGS.filter((l) => l.status >= 400).length;
-    const errorRate  = ((errorCount / total) * 100).toFixed(1);
+    const total      = apiLogs.length;
+    const errorCount = apiLogs.filter((l) => l.status >= 400).length;
+    const errorRate  = total > 0 ? ((errorCount / total) * 100).toFixed(1) : "0.0";
 
     // Count calls per endpoint to find the most-used one
-    const counts = MOCK_API_LOGS.reduce((acc, l) => {
+    const counts = apiLogs.reduce((acc, l) => {
       acc[l.endpoint] = (acc[l.endpoint] || 0) + 1;
       return acc;
     }, {});
@@ -493,11 +484,13 @@ export default function ApiSecurity() {
       Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
     return { total, errorCount, errorRate, topEndpoint };
-  }, []);
+  }, [apiLogs]);
 
   // ── Derived: security health score ────────────────────────────────────────
   const security = useMemo(() => {
-    const errorRate = MOCK_API_LOGS.filter((l) => l.status >= 400).length / MOCK_API_LOGS.length;
+    const errorRate = apiLogs.length > 0
+      ? apiLogs.filter((l) => l.status >= 400).length / apiLogs.length
+      : 0;
 
     const checks = [
       {
@@ -539,11 +532,11 @@ export default function ApiSecurity() {
     const scoreBg    = score >= 75 ? "bg-success-light" : score >= 50 ? "bg-warning-light" : "bg-danger-light";
 
     return { checks, score, scoreLabel, scoreColor, scoreBg };
-  }, [allowedOrigins]);
+  }, [allowedOrigins, apiLogs]);
 
   // ── Derived: filtered activity log rows ───────────────────────────────────
   const filteredLogs = useMemo(() => {
-    return MOCK_API_LOGS.filter((log) => {
+    return apiLogs.filter((log) => {
       const matchesStatus =
         logFilter === "all"     ? true :
         logFilter === "success" ? log.status < 400 :
@@ -557,7 +550,7 @@ export default function ApiSecurity() {
 
       return matchesStatus && matchesSearch;
     });
-  }, [logFilter, logSearch]);
+  }, [apiLogs, logFilter, logSearch]);
 
   const totalPages    = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
   const paginatedLogs = filteredLogs.slice(
@@ -722,7 +715,7 @@ export default function ApiSecurity() {
                     )}
                     {id === "activity" && !isLoading && (
                       <span className="text-[10px] font-semibold bg-surface-secondary text-text-muted px-1.5 py-0.5 rounded-full tabular-nums">
-                        {MOCK_API_LOGS.length}
+                        {apiLogs.length}
                       </span>
                     )}
                   </button>
@@ -912,9 +905,9 @@ export default function ApiSecurity() {
                   {/* Metadata tiles */}
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: "Last Used",      value: getRelativeTime(MOCK_API_LOGS[0].timestamp) },
-                      { label: "Calls / Month",  value: API_USAGE_CURRENT.toLocaleString()          },
-                      { label: "Last Origin IP", value: MOCK_API_LOGS[0].ip                         },
+                      { label: "Last Used",      value: apiLogs[0] ? getRelativeTime(apiLogs[0].timestamp) : "—" },
+                      { label: "Calls / Month",  value: API_USAGE_CURRENT.toLocaleString()                      },
+                      { label: "Last Origin IP", value: apiLogs[0]?.ip ?? "—"                                  },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-surface-secondary rounded-lg p-3 text-center border border-border">
                         <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1.5 font-semibold">
@@ -1168,7 +1161,7 @@ export default function ApiSecurity() {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-text-muted">
                 <Clock size={12} />
-                Last {MOCK_API_LOGS.length} requests
+                Last {apiLogs.length} requests
               </div>
             </div>
 
@@ -1288,9 +1281,8 @@ export default function ApiSecurity() {
                         <td className="font-mono text-xs text-text-primary">{log.endpoint}</td>
                         <td><MethodBadge method={log.method} /></td>
                         <td><StatusBadge code={log.status} /></td>
-                        <td className="font-mono text-xs tabular-nums">
-                          {getMockDuration(log.id)}
-                          <span className="text-text-muted ml-0.5">ms</span>
+                        <td className="font-mono text-xs tabular-nums text-text-muted">
+                          {log.duration != null ? <>{log.duration}<span className="ml-0.5">ms</span></> : "—"}
                         </td>
                         <td className="font-mono text-xs text-text-muted">{log.ip}</td>
                         <td className="text-xs text-text-muted tabular-nums">{getRelativeTime(log.timestamp)}</td>

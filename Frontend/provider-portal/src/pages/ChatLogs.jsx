@@ -195,7 +195,6 @@ function SkeletonTranscriptPanel() {
 // ─── Chat Logs Page ───────────────────────────────────────────────────────────
 
 export default function ChatLogs() {
-  // Using our rich mock data
   const [sessions] = useState(RICH_CHAT_SESSIONS);
   const [activeId, setActiveId] = useState(RICH_CHAT_SESSIONS[0]?.id || null);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -298,25 +297,21 @@ export default function ChatLogs() {
           <StatCard
             label="Total Sessions"
             value={stats.total}
-            trend="12%" trendUp={true}
             subtext="Last 30 days"
           />
           <StatCard
             label="Resolution Rate"
             value={`${stats.resolution}%`}
-            trend="2.4%" trendUp={true}
             subtext="Resolved without human"
           />
           <StatCard
             label="Avg. Session Time"
             value={`${stats.avgDur}m`}
-            trend="0.5m" trendUp={false}
             subtext="Time to resolution"
           />
           <StatCard
             label="Positive Sentiment"
             value={`${stats.positivePct}%`}
-            trend="5%" trendUp={true}
             subtext="Based on AI analysis"
           />
         </div>

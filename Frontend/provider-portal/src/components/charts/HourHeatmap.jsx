@@ -22,7 +22,16 @@ function intensityStyle(value, max) {
 }
 
 export function HourHeatmap() {
-  const maxVal = Math.max(...HEATMAP_DATA.flat().map((c) => c.value));
+  if (HEATMAP_DATA.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[120px] gap-1.5 text-center">
+        <p className="text-[12px] font-medium text-text-secondary">No activity data yet</p>
+        <p className="text-[11px] text-text-muted">Patient interaction patterns will appear here.</p>
+      </div>
+    );
+  }
+
+  const maxVal = Math.max(...HEATMAP_DATA.flat().map((c) => c.value), 0);
 
   return (
     <div aria-label="Hour-of-day interaction heatmap" className="w-full overflow-x-auto">

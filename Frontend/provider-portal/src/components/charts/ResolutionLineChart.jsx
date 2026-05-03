@@ -20,6 +20,15 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export function ResolutionLineChart() {
+  if (RESOLUTION_DATA.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[120px] gap-1.5 text-center">
+        <p className="text-[12px] font-medium text-text-secondary">No resolution data yet</p>
+        <p className="text-[11px] text-text-muted">AI resolution rates will appear here over time.</p>
+      </div>
+    );
+  }
+
   return (
     <div aria-label="AI resolution rate trend" className="h-full">
       <ResponsiveContainer width="100%" height="100%">
