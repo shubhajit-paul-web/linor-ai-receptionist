@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-black">
+      <main className="flex-1">
         <Hero />
         <Features />
         <HowItWorks />

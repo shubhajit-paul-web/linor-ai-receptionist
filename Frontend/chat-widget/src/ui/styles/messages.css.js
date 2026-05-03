@@ -297,6 +297,12 @@ export function messagesStyles() {
       margin-top: 5px;
     }
 
+    /* Critical: the 'hidden' attribute must actually hide the row —
+       otherwise "Failed to send" bleeds into every successful message. */
+    .bubble-retry-row[hidden] {
+      display: none !important;
+    }
+
     .bubble-retry-row__text {
       font-size: var(--font-size-xs);
       color: var(--error);
@@ -583,6 +589,263 @@ export function messagesStyles() {
     .error-banner__dismiss:focus-visible {
       outline: 2px solid var(--error);
       outline-offset: 1px;
+    }
+
+    /* ===================================================
+       BUBBLE ENTRANCE ANIMATION
+    =================================================== */
+
+    .bubble-wrapper {
+      animation: bubbleIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes bubbleIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .bubble-wrapper--user .bubble {
+      background: linear-gradient(135deg,
+        var(--primary) 0%,
+        rgba(var(--primary-rgb), 0.88) 100%);
+      box-shadow: 0 1px 2px rgba(var(--primary-rgb), 0.3),
+                  0 4px 12px rgba(var(--primary-rgb), 0.18);
+    }
+
+    /* ===================================================
+       READ RECEIPTS (inline with timestamp)
+    =================================================== */
+
+    .bubble-meta__status {
+      display: inline-flex;
+      align-items: center;
+      color: var(--text-tertiary);
+      transition: color var(--transition-base);
+    }
+
+    .bubble-meta__status--sent {
+      color: var(--text-tertiary);
+    }
+
+    .bubble-meta__status--delivered {
+      color: var(--primary);
+    }
+
+    .bubble-meta__status[hidden] { display: none !important; }
+
+    /* ===================================================
+       HEADER — refined avatar + extra actions
+    =================================================== */
+
+    .header {
+      background: linear-gradient(180deg,
+        var(--surface) 0%,
+        rgba(var(--primary-rgb), 0.015) 100%);
+    }
+
+    .header__avatar-fallback {
+      background: linear-gradient(135deg,
+        var(--primary) 0%,
+        rgba(var(--primary-rgb), 0.78) 100%);
+      box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.28);
+    }
+
+    .header__status-dot {
+      animation: statusPulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+      50%       { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+    }
+
+    .header__btn[aria-pressed="true"] {
+      background: rgba(var(--primary-rgb), 0.12);
+      color: var(--primary);
+    }
+
+    /* ===================================================
+       WELCOME CARD — richer starter screen
+    =================================================== */
+
+    .messages-welcome {
+      padding: 28px 16px 16px;
+      gap: 10px;
+    }
+
+    .messages-welcome__avatar {
+      background: linear-gradient(135deg,
+        rgba(var(--primary-rgb), 0.14) 0%,
+        rgba(var(--primary-rgb), 0.28) 100%);
+      border-color: rgba(var(--primary-rgb), 0.28);
+      box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.18);
+      animation: welcomeAvatarIn 420ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+    }
+
+    @keyframes welcomeAvatarIn {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1);   }
+    }
+
+    .messages-welcome__title {
+      font-size: var(--font-size-xl);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+      margin-top: 2px;
+    }
+
+    .messages-welcome__text {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      line-height: 1.55;
+      max-width: 280px;
+    }
+
+    .messages-welcome__hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      margin-top: 4px;
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: rgba(var(--primary-rgb), 0.1);
+      border-radius: var(--radius-full);
+    }
+
+    .messages-welcome__hint svg { flex-shrink: 0; }
+
+    /* ===================================================
+       SCROLL-TO-BOTTOM FLOATING PILL
+    =================================================== */
+
+    .scroll-to-bottom {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px 5px 10px;
+      background: var(--surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      font-family: var(--font);
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 3;
+    }
+
+    .scroll-to-bottom.is-visible {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .scroll-to-bottom:hover {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+      border-color: rgba(var(--primary-rgb), 0.3);
+      color: var(--primary);
+    }
+
+    .scroll-to-bottom__count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      background: var(--primary);
+      color: var(--text-inverse);
+      border-radius: var(--radius-full);
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .scroll-to-bottom__count[hidden] { display: none !important; }
+
+    /* Messages area needs to be positioning context for the pill */
+    .messages-area {
+      position: relative;
+    }
+
+    /* ===================================================
+       OFFLINE BANNER
+    =================================================== */
+
+    .offline-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: #fef3c7;
+      color: #92400e;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      flex-shrink: 0;
+      animation: bannerSlideIn 240ms ease both;
+    }
+
+    .offline-banner[hidden] { display: none !important; }
+
+    @keyframes bannerSlideIn {
+      from { opacity: 0; transform: translateY(-100%); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ===================================================
+       TYPING INDICATOR — enhanced
+    =================================================== */
+
+    .typing-bubble {
+      background: linear-gradient(135deg,
+        var(--surface) 0%,
+        var(--surface-alt) 100%);
+      animation: bubbleIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .typing-dot {
+      background: linear-gradient(135deg,
+        var(--primary) 0%,
+        rgba(var(--primary-rgb), 0.7) 100%);
+    }
+
+    .typing-label--visible {
+      color: var(--primary);
+    }
+
+    /* ===================================================
+       RESPECT REDUCED MOTION
+    =================================================== */
+
+    @media (prefers-reduced-motion: reduce) {
+      .bubble-wrapper,
+      .typing-bubble,
+      .messages-welcome__avatar,
+      .offline-banner,
+      .suggestion-chip {
+        animation: none !important;
+      }
+      .header__status-dot { animation: none !important; }
     }
   `;
 }

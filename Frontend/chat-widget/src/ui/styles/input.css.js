@@ -155,5 +155,132 @@ export function inputStyles() {
     .input-footer__text a:hover {
       text-decoration: underline;
     }
+
+    /* ===================================================
+       VOICE INPUT — mic button + listening pulse
+    =================================================== */
+
+    .voice-btn {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        transform 120ms ease;
+    }
+
+    .voice-btn:hover {
+      background: var(--surface-alt);
+      color: var(--text-primary);
+    }
+
+    .voice-btn:active { transform: scale(0.92); }
+
+    .voice-btn:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .voice-btn[hidden] { display: none !important; }
+
+    /* Active "listening" state — red mic + animated rings */
+    .voice-btn.is-listening {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    .voice-btn.is-listening::before,
+    .voice-btn.is-listening::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: var(--radius-sm);
+      border: 2px solid rgba(239, 68, 68, 0.55);
+      pointer-events: none;
+      animation: voicePulse 1.4s ease-out infinite;
+    }
+
+    .voice-btn.is-listening::after {
+      animation-delay: 0.7s;
+    }
+
+    @keyframes voicePulse {
+      0%   { transform: scale(0.92); opacity: 0.8; }
+      100% { transform: scale(1.55); opacity: 0;   }
+    }
+
+    /* Interim transcript chip appearing above the input */
+    .interim-transcript {
+      margin: 0 12px 6px;
+      padding: 7px 11px;
+      background: rgba(var(--primary-rgb), 0.08);
+      border: 1px dashed rgba(var(--primary-rgb), 0.4);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      color: var(--primary);
+      font-style: italic;
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: bannerSlideIn 220ms ease both;
+    }
+
+    .interim-transcript[hidden] { display: none !important; }
+
+    .interim-transcript__dot {
+      flex-shrink: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: var(--radius-full);
+      background: var(--error);
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1;   }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ===================================================
+       CHARACTER COUNTER
+    =================================================== */
+
+    .input-counter {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      padding: 0 8px 4px 0;
+      text-align: right;
+      opacity: 0;
+      transition: opacity var(--transition-base), color var(--transition-fast);
+    }
+
+    .input-counter.is-visible { opacity: 1; }
+    .input-counter.is-warn    { color: var(--warning); }
+    .input-counter.is-limit   { color: var(--error); }
+
+    /* ===================================================
+       REDUCED MOTION
+    =================================================== */
+
+    @media (prefers-reduced-motion: reduce) {
+      .voice-btn.is-listening::before,
+      .voice-btn.is-listening::after,
+      .interim-transcript__dot,
+      .input-wrapper.is-disabled {
+        animation: none !important;
+      }
+    }
   `;
 }

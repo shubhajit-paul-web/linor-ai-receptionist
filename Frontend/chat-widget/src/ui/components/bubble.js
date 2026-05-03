@@ -13,7 +13,7 @@
  */
 
 import { h, escapeHtml, formatTime, getInitials } from '../../utils/dom.js';
-import { ICON_RETRY } from '../../utils/icons.js';
+import { ICON_RETRY, ICON_CHECK, ICON_CHECK_DOUBLE } from '../../utils/icons.js';
 import { createSuggestions } from './suggestions.js';
 
 /**
@@ -57,35 +57,52 @@ export function createBubble(message, config, bus, showAvatar = true) {
   const textEl = h('div', { class: `bubble bubble--${isUser ? 'user' : 'assistant'}` });
   textEl.textContent = message.content;
 
-  // ── Retry row (shown only for failed messages) ────────────────────────────
+  // ── Retry row (user bubbles only — assistant can never "fail to send") ────
 
-  const retryRow = h(
+  let retryRow = null;
+  if (isUser) {
+    retryRow = h('div', { class: 'bubble-retry-row', 'aria-live': 'polite' });
+    retryRow.setAttribute('hidden', '');
+
+    const retryBtn = h('button', {
+      class: 'bubble-retry-btn',
+      type: 'button',
+      'aria-label': 'Retry sending this message',
+      html: `${ICON_RETRY} Retry`,
+    });
+    retryBtn.addEventListener('click', () => {
+      bus.emit('retry-message', { messageId: message.id, content: message.content });
+    });
+
+    const failedText = h('span', { class: 'bubble-retry-row__text' }, 'Failed to send.');
+    retryRow.appendChild(failedText);
+    retryRow.appendChild(retryBtn);
+  }
+
+  // ── Timestamp + delivery status ───────────────────────────────────────────
+
+  const timeSpan = h('span', { class: 'bubble-meta__time' }, formatTime(message.timestamp));
+
+  // Delivery check glyph — only for user bubbles, hidden until status=sent
+  let statusGlyph = null;
+  if (isUser) {
+    statusGlyph = h('span', {
+      class: 'bubble-meta__status',
+      'aria-hidden': 'true',
+      html: ICON_CHECK,
+    });
+    statusGlyph.setAttribute('hidden', '');
+  }
+
+  const metaEl = h(
     'div',
-    { class: 'bubble-retry-row', 'aria-live': 'polite' }
+    {
+      class: `bubble-meta bubble-meta--${isUser ? 'user' : 'assistant'}`,
+      'aria-label': new Date(message.timestamp).toLocaleTimeString(),
+    },
+    timeSpan,
+    statusGlyph
   );
-  retryRow.setAttribute('hidden', '');
-
-  const retryBtn = h('button', {
-    class: 'bubble-retry-btn',
-    type: 'button',
-    'aria-label': 'Retry sending this message',
-    html: `${ICON_RETRY} Retry`,
-  });
-  retryBtn.addEventListener('click', () => {
-    bus.emit('retry-message', { messageId: message.id, content: message.content });
-  });
-
-  const failedText = h('span', { class: 'bubble-retry-row__text' }, 'Failed to send.');
-  retryRow.appendChild(failedText);
-  retryRow.appendChild(retryBtn);
-
-  // ── Timestamp ─────────────────────────────────────────────────────────────
-
-  const metaEl = h('div', {
-    class: `bubble-meta bubble-meta--${isUser ? 'user' : 'assistant'}`,
-    'aria-label': new Date(message.timestamp).toLocaleTimeString(),
-  });
-  metaEl.textContent = formatTime(message.timestamp);
 
   // ── Suggestion chips (assistant only) ─────────────────────────────────────
   // Created for every assistant bubble; self-hides when list is empty.
@@ -103,7 +120,8 @@ export function createBubble(message, config, bus, showAvatar = true) {
 
   const contentChildren = [textEl];
   if (suggestionsHandle) contentChildren.push(suggestionsHandle.el);
-  contentChildren.push(retryRow, metaEl);
+  if (retryRow) contentChildren.push(retryRow);
+  contentChildren.push(metaEl);
   const contentEl = h('div', { class: 'bubble-content' }, ...contentChildren);
 
   // ── Wrapper ───────────────────────────────────────────────────────────────
@@ -132,12 +150,21 @@ export function createBubble(message, config, bus, showAvatar = true) {
 
     if (status === 'sending') {
       textEl.classList.add('bubble--sending');
-      retryRow.setAttribute('hidden', '');
+      if (retryRow) retryRow.setAttribute('hidden', '');
+      if (statusGlyph) statusGlyph.setAttribute('hidden', '');
     } else if (status === 'failed') {
       textEl.classList.add('bubble--failed');
-      retryRow.removeAttribute('hidden');
+      if (retryRow) retryRow.removeAttribute('hidden');
+      if (statusGlyph) statusGlyph.setAttribute('hidden', '');
     } else {
-      retryRow.setAttribute('hidden', '');
+      // 'sent' (or any other non-error state) — show delivery glyph for user bubbles
+      if (retryRow) retryRow.setAttribute('hidden', '');
+      if (statusGlyph) {
+        statusGlyph.innerHTML = status === 'delivered' ? ICON_CHECK_DOUBLE : ICON_CHECK;
+        statusGlyph.classList.toggle('bubble-meta__status--delivered', status === 'delivered');
+        statusGlyph.classList.toggle('bubble-meta__status--sent', status !== 'delivered');
+        statusGlyph.removeAttribute('hidden');
+      }
     }
   }
 
@@ -156,7 +183,11 @@ export function createBubble(message, config, bus, showAvatar = true) {
     }
     if (updatedMessage.timestamp !== message.timestamp) {
       message.timestamp = updatedMessage.timestamp;
-      metaEl.textContent = formatTime(updatedMessage.timestamp);
+      timeSpan.textContent = formatTime(updatedMessage.timestamp);
+      metaEl.setAttribute(
+        'aria-label',
+        new Date(updatedMessage.timestamp).toLocaleTimeString()
+      );
     }
 
     // Suggestions: cheap value-compare avoids spurious DOM churn.

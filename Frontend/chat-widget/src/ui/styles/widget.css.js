@@ -47,7 +47,9 @@ export function widgetStyles(config) {
       width: ${btnSize}px;
       height: ${btnSize}px;
       border-radius: var(--radius-full);
-      background: var(--primary);
+      background: linear-gradient(135deg,
+        var(--primary) 0%,
+        rgba(var(--primary-rgb), 0.82) 100%);
       border: none;
       cursor: pointer;
       display: flex;
@@ -57,11 +59,30 @@ export function widgetStyles(config) {
       box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.45),
                   0 2px 6px rgba(0,0,0,0.12);
       transition: transform var(--transition-spring),
-                  box-shadow var(--transition-base);
+                  box-shadow var(--transition-base),
+                  background var(--transition-base);
       outline: none;
       pointer-events: all;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
+      /* Gentle entrance — the button scales in from 0 on mount */
+      animation: launcherIn 520ms cubic-bezier(0.22, 1.2, 0.36, 1) both,
+                 launcherAttention 3.2s ease-in-out 1.2s 2;
+    }
+
+    @keyframes launcherIn {
+      from { opacity: 0; transform: scale(0.2); }
+      to   { opacity: 1; transform: scale(1);   }
+    }
+
+    /* Gentle two-pulse attention — plays twice after mount, then stops */
+    @keyframes launcherAttention {
+      0%, 100% { box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.45),
+                             0 2px 6px rgba(0,0,0,0.12),
+                             0 0 0 0 rgba(var(--primary-rgb), 0.35); }
+      50%       { box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.45),
+                              0 2px 6px rgba(0,0,0,0.12),
+                              0 0 0 12px rgba(var(--primary-rgb), 0); }
     }
 
     .launcher:hover {
@@ -194,6 +215,14 @@ export function widgetStyles(config) {
         ${hProp}: ${Math.max(x - 10, 8)}px;
         width: ${mobileBtnSize}px;
         height: ${mobileBtnSize}px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .launcher { animation: launcherIn 280ms ease both !important; }
+      .widget-window {
+        transition: opacity 150ms ease !important;
+        transform: none !important;
       }
     }
   `;

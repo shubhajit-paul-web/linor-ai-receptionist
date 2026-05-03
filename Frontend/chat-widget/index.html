@@ -159,14 +159,22 @@
         "Great choice! That's one of our most popular options. Would you like me to walk you through it?",
       ];
 
+      const MOCK_SUGGESTIONS = [
+        ['Book an appointment', 'Working hours', 'Services offered', 'Contact info'],
+        ['Yes, tell me more', 'No thanks', 'Book it'],
+        ['Today', 'Tomorrow', 'This weekend', 'Next week'],
+        ['Talk to a human', 'Start over'],
+      ];
+
       window.fetch = (url, opts) => {
         if (typeof url === 'string' && url.includes('demo-api')) {
           return new Promise((resolve) => {
             const delay = 1000 + Math.random() * 1000;
             setTimeout(() => {
               const reply = MOCK_REPLIES[Math.floor(Math.random() * MOCK_REPLIES.length)];
+              const suggestions = MOCK_SUGGESTIONS[Math.floor(Math.random() * MOCK_SUGGESTIONS.length)];
               resolve(
-                new Response(JSON.stringify({ reply }), {
+                new Response(JSON.stringify({ reply, suggestions }), {
                   status: 200,
                   headers: { 'Content-Type': 'application/json' },
                 })
@@ -189,6 +197,13 @@
         offsetX:        24,
         offsetY:        24,
         hideAttribution: false,
+        // Voice mode — try it out on Chrome/Edge/Safari
+        enableVoice:    true,
+        enableTTS:      true,
+        ttsDefaultOn:   false,
+        voiceLang:      'en-US',
+        // Subtle sound effects (off by default)
+        enableSounds:   true,
       };
     </script>
 

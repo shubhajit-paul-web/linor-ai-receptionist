@@ -5,20 +5,25 @@
  * Displays:
  *  - Bot avatar (image or initials fallback) with online status dot
  *  - Bot name + "Active now" subtitle
+ *  - Optional TTS (voice output) toggle — only when the browser supports it
+ *    and config.enableTTS !== false
  *  - Close (chevron-down) button
  *
- * Emits 'close' when the close button is clicked.
+ * Emits:
+ *  - 'close'        when the close button is clicked
+ *  - 'tts-toggle'   when the speaker toggle is clicked
  */
 
 import { h, getInitials } from '../../utils/dom.js';
-import { ICON_CHEVRON_DOWN } from '../../utils/icons.js';
+import { ICON_CHEVRON_DOWN, ICON_VOLUME_ON, ICON_VOLUME_OFF } from '../../utils/icons.js';
 
 /**
+ * @param {object} store  — reactive state store (for ttsEnabled/ttsSupported)
  * @param {object} bus    — internal event bus
- * @param {object} config — widget config (botName, avatarUrl)
+ * @param {object} config — widget config (botName, avatarUrl, enableTTS)
  * @returns {{ el: HTMLElement, destroy: Function }}
  */
-export function createHeader(bus, config) {
+export function createHeader(store, bus, config) {
   // ── Avatar ────────────────────────────────────────────────────────────────
 
   let avatarEl;
@@ -58,6 +63,35 @@ export function createHeader(bus, config) {
   const subtitleEl = h('div', { class: 'header__subtitle' }, 'Active now');
   const infoEl = h('div', { class: 'header__info' }, nameEl, subtitleEl);
 
+  // ── TTS / speaker toggle (optional) ───────────────────────────────────────
+
+  const ttsBtn = h('button', {
+    class: 'header__btn',
+    type: 'button',
+    'aria-label': 'Turn on voice responses',
+    'aria-pressed': 'false',
+    title: 'Voice responses',
+    html: ICON_VOLUME_OFF,
+  });
+  ttsBtn.setAttribute('hidden', '');
+
+  const handleTtsToggle = () => bus.emit('tts-toggle');
+  ttsBtn.addEventListener('click', handleTtsToggle);
+
+  function syncTtsButton(state) {
+    const show = state.ttsSupported && config.enableTTS !== false;
+    ttsBtn.toggleAttribute('hidden', !show);
+
+    const on = !!state.ttsEnabled;
+    ttsBtn.innerHTML = on ? ICON_VOLUME_ON : ICON_VOLUME_OFF;
+    ttsBtn.setAttribute('aria-pressed', String(on));
+    ttsBtn.setAttribute(
+      'aria-label',
+      on ? 'Turn off voice responses' : 'Turn on voice responses'
+    );
+    ttsBtn.title = on ? 'Voice responses: on' : 'Voice responses: off';
+  }
+
   // ── Close button ──────────────────────────────────────────────────────────
 
   const closeBtn = h('button', {
@@ -70,16 +104,31 @@ export function createHeader(bus, config) {
   const handleClose = () => bus.emit('close');
   closeBtn.addEventListener('click', handleClose);
 
-  const actionsEl = h('div', { class: 'header__actions' }, closeBtn);
+  const actionsEl = h('div', { class: 'header__actions' }, ttsBtn, closeBtn);
 
   // ── Root ──────────────────────────────────────────────────────────────────
 
   const el = h('header', { class: 'header', role: 'banner' }, avatarWrapper, infoEl, actionsEl);
 
+  // ── Reactive sync ─────────────────────────────────────────────────────────
+
+  function update(state, prev) {
+    if (
+      state.ttsEnabled   !== prev?.ttsEnabled ||
+      state.ttsSupported !== prev?.ttsSupported
+    ) {
+      syncTtsButton(state);
+    }
+  }
+  const unsubscribe = store.subscribe(update);
+  syncTtsButton(store.getState());
+
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   function destroy() {
     closeBtn.removeEventListener('click', handleClose);
+    ttsBtn.removeEventListener('click', handleTtsToggle);
+    unsubscribe();
   }
 
   return { el, destroy };
