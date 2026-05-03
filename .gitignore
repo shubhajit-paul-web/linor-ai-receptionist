@@ -89,6 +89,10 @@ out
 .nuxt
 dist
 
+# Allow the compiled chat-widget bundle to be committed so jsDelivr can serve it
+!Frontend/chat-widget/dist/
+!Frontend/chat-widget/dist/widget.js
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
