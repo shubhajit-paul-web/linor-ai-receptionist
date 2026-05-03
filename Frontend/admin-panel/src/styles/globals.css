@@ -1,0 +1,214 @@
+@import 'tailwindcss';
+
+/*
+ * Linor Admin Panel — design tokens.
+ * Linear-style: dark-first, OKLCH-tuned neutrals, single saturated indigo accent.
+ * Tokens are exposed both as Tailwind utilities (via @theme) and as CSS variables (via :root)
+ * so non-utility code (recharts, radix internals, custom CSS) can consume them too.
+ */
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  /* Neutrals — OKLCH ladder, dark canvas first */
+  --color-canvas: oklch(14% 0.005 270);
+  --color-surface: oklch(16% 0.005 270);
+  --color-elevated: oklch(19% 0.006 270);
+  --color-overlay: oklch(22% 0.007 270);
+
+  --color-border-subtle: oklch(24% 0.006 270);
+  --color-border-default: oklch(30% 0.008 270);
+  --color-border-strong: oklch(40% 0.01 270);
+
+  --color-primary: oklch(98% 0.003 270);
+  --color-secondary: oklch(75% 0.01 270);
+  --color-tertiary: oklch(58% 0.01 270);
+  --color-disabled: oklch(40% 0.008 270);
+
+  /* Accent — indigo */
+  --color-accent: oklch(64% 0.18 268);
+  --color-accent-hover: oklch(70% 0.18 268);
+  --color-accent-active: oklch(58% 0.18 268);
+  --color-accent-subtle: oklch(28% 0.07 268);
+  --color-accent-on: oklch(98% 0.003 270);
+
+  /* Semantic */
+  --color-success: oklch(70% 0.16 150);
+  --color-success-subtle: oklch(28% 0.06 150);
+  --color-success-on: oklch(98% 0.003 150);
+
+  --color-warning: oklch(78% 0.14 75);
+  --color-warning-subtle: oklch(30% 0.06 75);
+  --color-warning-on: oklch(20% 0.02 75);
+
+  --color-danger: oklch(65% 0.2 25);
+  --color-danger-subtle: oklch(28% 0.08 25);
+  --color-danger-on: oklch(98% 0.003 25);
+
+  --color-info: oklch(72% 0.13 230);
+  --color-info-subtle: oklch(28% 0.06 230);
+  --color-info-on: oklch(98% 0.003 230);
+
+  /* Chart palette (categorical) */
+  --color-chart-1: oklch(64% 0.18 268);
+  --color-chart-2: oklch(70% 0.16 150);
+  --color-chart-3: oklch(78% 0.14 75);
+  --color-chart-4: oklch(65% 0.2 25);
+  --color-chart-5: oklch(72% 0.13 230);
+  --color-chart-6: oklch(68% 0.16 320);
+  --color-chart-7: oklch(74% 0.14 195);
+  --color-chart-8: oklch(70% 0.16 50);
+
+  /* Shadows — hairline + soft fill stack */
+  --shadow-hairline: 0 0 0 1px oklch(0% 0 0 / 0.6);
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-md: 0 4px 12px -2px oklch(0% 0 0 / 0.5), 0 0 0 1px oklch(100% 0 0 / 0.04);
+  --shadow-lg: 0 16px 32px -8px oklch(0% 0 0 / 0.6), 0 0 0 1px oklch(100% 0 0 / 0.05);
+  --shadow-overlay: 0 24px 48px -12px oklch(0% 0 0 / 0.7), 0 0 0 1px oklch(100% 0 0 / 0.06);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0.1, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
+}
+
+/* Light theme — first-class via tokens. Toggle via [data-theme="light"]. */
+[data-theme='light'] {
+  --color-canvas: oklch(99% 0.002 270);
+  --color-surface: oklch(98% 0.003 270);
+  --color-elevated: oklch(100% 0 0);
+  --color-overlay: oklch(96% 0.004 270);
+
+  --color-border-subtle: oklch(94% 0.005 270);
+  --color-border-default: oklch(89% 0.007 270);
+  --color-border-strong: oklch(78% 0.01 270);
+
+  --color-primary: oklch(18% 0.008 270);
+  --color-secondary: oklch(38% 0.01 270);
+  --color-tertiary: oklch(55% 0.012 270);
+  --color-disabled: oklch(72% 0.01 270);
+
+  --color-accent: oklch(50% 0.2 268);
+  --color-accent-hover: oklch(45% 0.2 268);
+  --color-accent-active: oklch(40% 0.2 268);
+  --color-accent-subtle: oklch(95% 0.04 268);
+  --color-accent-on: oklch(99% 0.003 270);
+
+  --shadow-hairline: 0 0 0 1px oklch(0% 0 0 / 0.08);
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
+  --shadow-md: 0 4px 12px -2px oklch(0% 0 0 / 0.08), 0 0 0 1px oklch(0% 0 0 / 0.04);
+  --shadow-lg: 0 16px 32px -8px oklch(0% 0 0 / 0.12), 0 0 0 1px oklch(0% 0 0 / 0.05);
+  --shadow-overlay: 0 24px 48px -12px oklch(0% 0 0 / 0.14), 0 0 0 1px oklch(0% 0 0 / 0.06);
+}
+
+/* Density modes — applied at <html data-density="..."> */
+:root {
+  --row-height: 36px;
+}
+[data-density='compact'] {
+  --row-height: 28px;
+}
+[data-density='cozy'] {
+  --row-height: 44px;
+}
+
+/* Base resets layered after Tailwind preflight. */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Selection */
+  ::selection {
+    background: color-mix(in oklch, var(--color-accent) 30%, transparent);
+    color: var(--color-primary);
+  }
+
+  /* Scrollbars — thin, subtle */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-border-default);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-strong);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+
+  /* Focus ring — applied on every interactive element */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Utility helpers extending Tailwind */
+@utility surface-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+@utility surface-elevated {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+@utility hairline {
+  border: 1px solid var(--color-border-subtle);
+}
+
+@utility text-primary {
+  color: var(--color-primary);
+}
+@utility text-secondary {
+  color: var(--color-secondary);
+}
+@utility text-tertiary {
+  color: var(--color-tertiary);
+}
