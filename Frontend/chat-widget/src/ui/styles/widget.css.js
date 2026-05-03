@@ -3,9 +3,37 @@
  * Styles for the launcher button and the main chat window frame.
  * Includes open/close animations and responsive breakpoints.
  *
+ * @param {object} config — widget config (position, offsetX, offsetY, buttonSize,
+ *                          windowWidth, windowHeight, zIndex)
  * @returns {string} CSS string
  */
-export function widgetStyles() {
+export function widgetStyles(config) {
+  const pos     = config.position   || 'bottom-right';
+  const isLeft  = pos.includes('left');
+  const isTop   = pos.includes('top');
+  const x       = typeof config.offsetX     === 'number' ? config.offsetX     : 24;
+  const y       = typeof config.offsetY     === 'number' ? config.offsetY     : 24;
+  const btnSize = typeof config.buttonSize  === 'number' ? config.buttonSize  : 56;
+  const winW    = typeof config.windowWidth === 'number' ? config.windowWidth : 380;
+  const winH    = typeof config.windowHeight=== 'number' ? config.windowHeight: 580;
+
+  // Gap between the launcher button and the chat window edge
+  const GAP = 12;
+  const windowEdge = y + btnSize + GAP;
+
+  // CSS property names based on position
+  const hProp   = isLeft ? 'left'   : 'right';
+  const vProp   = isTop  ? 'top'    : 'bottom';
+
+  // Animation direction: window slides toward/away from the button
+  const slideY  = isTop  ? '-14px'  : '14px';
+
+  // transform-origin corners
+  const origin  = `${isTop ? 'top' : 'bottom'} ${isLeft ? 'left' : 'right'}`;
+
+  // Mobile: small launcher position
+  const mobileBtnSize = Math.max(btnSize - 4, 44);
+
   return `
     /* ===================================================
        LAUNCHER BUTTON
@@ -13,11 +41,11 @@ export function widgetStyles() {
 
     .launcher {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      ${vProp}: ${y}px;
+      ${hProp}: ${x}px;
       z-index: var(--z-widget);
-      width: 56px;
-      height: 56px;
+      width: ${btnSize}px;
+      height: ${btnSize}px;
       border-radius: var(--radius-full);
       background: var(--primary);
       border: none;
@@ -117,12 +145,12 @@ export function widgetStyles() {
 
     .widget-window {
       position: fixed;
-      bottom: 92px;
-      right: 24px;
+      ${vProp}: ${windowEdge}px;
+      ${hProp}: ${x}px;
       z-index: var(--z-widget);
-      width: 380px;
-      height: 580px;
-      max-height: calc(100dvh - 104px);
+      width: ${winW}px;
+      height: ${winH}px;
+      max-height: calc(100dvh - ${windowEdge + 16}px);
       background: var(--surface);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-xl);
@@ -132,8 +160,8 @@ export function widgetStyles() {
       pointer-events: none;
       /* Animation start state */
       opacity: 0;
-      transform: scale(0.93) translateY(14px);
-      transform-origin: bottom right;
+      transform: scale(0.93) translateY(${slideY});
+      transform-origin: ${origin};
       transition: opacity 0.2s ease,
                   transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
       will-change: transform, opacity;
@@ -152,20 +180,20 @@ export function widgetStyles() {
     @media (max-width: 480px) {
       .widget-window {
         width: calc(100vw - 16px);
-        height: calc(100dvh - 84px);
-        max-height: calc(100dvh - 84px);
-        bottom: 68px;
-        right: 8px;
-        left: 8px;
+        height: calc(100dvh - ${mobileBtnSize + y + GAP + 16}px);
+        max-height: calc(100dvh - ${mobileBtnSize + y + GAP + 16}px);
+        ${vProp}: ${mobileBtnSize + y + GAP}px;
+        ${hProp}: 8px;
+        ${isLeft ? 'right: 8px;' : 'left: 8px;'}
         border-radius: var(--radius-lg) var(--radius-lg) var(--radius-md) var(--radius-md);
-        transform-origin: bottom center;
+        transform-origin: ${isTop ? 'top' : 'bottom'} center;
       }
 
       .launcher {
-        bottom: 14px;
-        right: 14px;
-        width: 52px;
-        height: 52px;
+        ${vProp}: ${Math.max(y - 10, 8)}px;
+        ${hProp}: ${Math.max(x - 10, 8)}px;
+        width: ${mobileBtnSize}px;
+        height: ${mobileBtnSize}px;
       }
     }
   `;

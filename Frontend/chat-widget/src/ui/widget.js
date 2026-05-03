@@ -46,7 +46,7 @@ export function createWidget(shadow, config) {
   const styleEl = document.createElement('style');
   styleEl.textContent = [
     baseStyles(config),
-    widgetStyles(),
+    widgetStyles(config),
     messagesStyles(),
     inputStyles(),
   ].join('\n');
@@ -178,13 +178,14 @@ export function createWidget(shadow, config) {
     focusTrap.deactivate(launcherFocusRef);
   }
 
-  // ── 10. Global Escape key listener ────────────────────────────────────────
+  // ── 10. Global Escape key listener (stored ref for cleanup) ─────────────────────
 
-  document.addEventListener('keydown', (e) => {
+  const handleEscapeKey = (e) => {
     if (e.key === 'Escape' && store.getState().isOpen) {
       closeWidget();
     }
-  });
+  };
+  document.addEventListener('keydown', handleEscapeKey);
 
   // ── 11. Send message flow ──────────────────────────────────────────────────
 
@@ -280,4 +281,22 @@ export function createWidget(shadow, config) {
   // ── 12. Restore persisted open state is intentionally NOT done ─────────────
   // The widget always starts closed. Open state is not persisted
   // as it would be jarring on page reload.
+
+  // ── 13. Public API ────────────────────────────────────────────────────────────────
+
+  function destroyWidget() {
+    document.removeEventListener('keydown', handleEscapeKey);
+    bus.clear();
+    persistTimer && clearTimeout(persistTimer);
+  }
+
+  return {
+    open:    openWidget,
+    close:   closeWidget,
+    toggle:  () => (store.getState().isOpen ? closeWidget() : openWidget()),
+    destroy: destroyWidget,
+    on:      (event, fn) => bus.on(event, fn),
+    off:     (event, fn) => bus.off(event, fn),
+    getState: () => ({ ...store.getState() }),
+  };
 }

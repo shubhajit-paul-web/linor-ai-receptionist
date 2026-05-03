@@ -47,9 +47,8 @@ export function createLauncher(store, bus, config) {
 
   // ── Interactions ───────────────────────────────────────────────────────────
 
-  button.addEventListener('click', () => {
-    bus.emit('toggle');
-  });
+  const handleClick = () => bus.emit('toggle');
+  button.addEventListener('click', handleClick);
 
   // ── State sync ─────────────────────────────────────────────────────────────
 
@@ -86,7 +85,7 @@ export function createLauncher(store, bus, config) {
 
   function destroy() {
     unsubscribe();
-    button.removeEventListener('click', () => bus.emit('toggle'));
+    button.removeEventListener('click', handleClick);
   }
 
   return { el: button, destroy };

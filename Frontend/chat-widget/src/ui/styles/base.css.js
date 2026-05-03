@@ -72,7 +72,7 @@ export function baseStyles(config) {
       --transition-spring: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
       /* === Z-index === */
-      --z-widget:         2147483647;
+      --z-widget:         ${config.zIndex};
 
       /* === Layout === */
       font-family:        var(--font);

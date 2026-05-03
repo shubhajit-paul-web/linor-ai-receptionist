@@ -46,15 +46,7 @@ export function createInput(store, bus, config) {
 
   const inputWrapper = h('div', { class: 'input-wrapper' }, textarea);
 
-  // ── Footer ────────────────────────────────────────────────────────────────
-
-  const footer = h(
-    'div',
-    { class: 'input-footer' },
-    h('span', { class: 'input-footer__text' }, 'Powered by AI Receptionist')
-  );
-
-  // ── Root ──────────────────────────────────────────────────────────────────
+  // ── Root ────────────────────────────────────────────────────────────────
 
   const el = h(
     'div',
@@ -63,8 +55,15 @@ export function createInput(store, bus, config) {
     sendBtn
   );
 
-  // Container: stacks input row + footer as a flex-column unit
-  const wrapper = h('div', { class: 'input-container' }, el, footer);
+  // Container: stacks input row + optional attribution footer
+  const wrapper = h('div', { class: 'input-container' }, el);
+  if (!config.hideAttribution) {
+    wrapper.appendChild(
+      h('div', { class: 'input-footer' },
+        h('span', { class: 'input-footer__text' }, 'Powered by AI Receptionist')
+      )
+    );
+  }
 
   // ── Auto-resize textarea ──────────────────────────────────────────────────
 
