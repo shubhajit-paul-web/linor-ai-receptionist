@@ -15,7 +15,7 @@ export function SkeletonStatCards() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-surface border border-border rounded-md p-5">
+        <div key={i} className="bg-surface border border-border rounded-xl p-4">
           <div className="flex items-start justify-between mb-4">
             <div>
               <SkeletonBar className="h-3 w-24 mb-3" />
@@ -33,7 +33,7 @@ export function SkeletonStatCards() {
 /** Skeleton for a data table */
 export function SkeletonTable({ rows = 5, cols = 6 }) {
   return (
-    <div className="bg-surface border border-border rounded-md overflow-hidden">
+    <div className="bg-surface border border-border rounded-xl overflow-hidden">
       {/* Header */}
       <div className="flex gap-4 px-4 py-3 border-b border-border">
         {Array.from({ length: cols }).map((_, i) => (
@@ -61,7 +61,7 @@ export function SkeletonTable({ rows = 5, cols = 6 }) {
 /** Skeleton for a chart card */
 export function SkeletonChart({ height = 200 }) {
   return (
-    <div className="bg-surface border border-border rounded-md p-5">
+    <div className="bg-surface border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <SkeletonBar className="h-4 w-36" />
         <SkeletonBar className="h-7 w-40 rounded-md" />
@@ -74,7 +74,7 @@ export function SkeletonChart({ height = 200 }) {
 /** Skeleton for a single FAQ card */
 export function SkeletonFaqCard() {
   return (
-    <div className="bg-surface border border-border rounded-md p-4 flex gap-3">
+    <div className="bg-surface border border-border rounded-xl p-4 flex gap-3">
       <SkeletonBar className="w-4 h-4 rounded mt-1 flex-shrink-0" />
       <div className="flex-1">
         <SkeletonBar className="h-4 w-3/4 mb-2" />

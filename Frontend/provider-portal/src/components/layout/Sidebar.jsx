@@ -1,85 +1,40 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, CalendarCheck, MessageSquare, HelpCircle,
-  Sliders, Code2, Building2, Clock, Shield, CreditCard,
-  Sun, Moon, LogOut, PanelLeftClose, PanelLeftOpen,
+  Sun, Moon, LogOut, ChevronsLeft, ChevronsRight, ShieldCheck,
 } from 'lucide-react';
 import useUIStore from '../../store/useUIStore';
 import useAuthStore from '../../store/useAuthStore';
 import useClinicStore from '../../store/useClinicStore';
 import { cn, getInitials } from '../../lib/utils';
 import Tooltip from '../shared/Tooltip';
+import { NAV_GROUPS } from './navConfig';
 
-// ─── Navigation Configuration ─────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// NavItem — single sidebar entry. Tooltipped when collapsed.
+// ──────────────────────────────────────────────────────────────
 
-const NAV_GROUPS = [
-  {
-    label: 'Overview',
-    items: [
-      { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: 'Patient Interactions',
-    items: [
-      { path: '/appointments', label: 'Appointments', icon: CalendarCheck },
-      { path: '/logs', label: 'Chat Logs', icon: MessageSquare },
-    ],
-  },
-  {
-    label: 'Chatbot Config',
-    items: [
-      { path: '/faqs', label: 'FAQs', icon: HelpCircle },
-      { path: '/widget-settings', label: 'Widget Settings', icon: Sliders },
-      { path: '/embed', label: 'Embed Code', icon: Code2 },
-    ],
-  },
-  {
-    label: 'Clinic',
-    items: [
-      { path: '/settings', label: 'Clinic Settings', icon: Building2 },
-      { path: '/working-hours', label: 'Working Hours', icon: Clock },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      { path: '/api-security', label: 'API & Security', icon: Shield },
-      { path: '/billing', label: 'Billing', icon: CreditCard, badge: 'Pro' },
-    ],
-  },
-];
-
-// ─── Individual Nav Item ──────────────────────────────────────────────────────
-
-function NavItem({ path, label, icon: Icon, badge, collapsed }) {
-  const navLink = (
+function NavItem({ path, label, icon: Icon, hint, collapsed }) {
+  const link = (
     <NavLink
       to={path}
-      className={({ isActive }) =>
-        cn('sidebar-item group', isActive && 'active')
-      }
+      className={({ isActive }) => cn('sidebar-item group', isActive && 'active')}
+      end={path === '/dashboard'}
     >
       {({ isActive }) => (
         <>
-          <Icon size={16} strokeWidth={2.2} className={cn("flex-shrink-0 transition-colors duration-200", isActive ? "text-text-primary" : "text-text-muted group-hover:text-text-primary")} />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden whitespace-nowrap ml-1"
-              >
-                {label}
-              </motion.span>
+          <Icon
+            size={15}
+            strokeWidth={2}
+            className={cn(
+              'flex-shrink-0 transition-colors',
+              isActive ? 'text-primary' : 'text-text-muted group-hover:text-text-primary',
             )}
-          </AnimatePresence>
-          {badge && !collapsed && (
-            <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md">
-              {badge}
+          />
+          {!collapsed && <span className="truncate">{label}</span>}
+          {!collapsed && hint && (
+            <span className="ml-auto text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary-light px-1.5 py-0.5 rounded">
+              {hint}
             </span>
           )}
         </>
@@ -87,16 +42,17 @@ function NavItem({ path, label, icon: Icon, badge, collapsed }) {
     </NavLink>
   );
 
-  if (!collapsed) return navLink;
-
+  if (!collapsed) return link;
   return (
     <Tooltip content={label} placement="right">
-      {navLink}
+      {link}
     </Tooltip>
   );
 }
 
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// Sidebar — primary navigation rail.
+// ──────────────────────────────────────────────────────────────
 
 export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, theme, toggleTheme } = useUIStore();
@@ -111,181 +67,126 @@ export function Sidebar() {
 
   return (
     <motion.aside
-      animate={{ width: sidebarCollapsed ? 64 : 240 }}
-      transition={{ duration: 0.2, ease: 'easeInOut' }}
+      animate={{ width: sidebarCollapsed ? 60 : 232 }}
+      transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
       className={cn(
-        'fixed top-0 left-0 h-screen z-40',
-        'bg-surface border-r border-border',
-        'flex flex-col overflow-hidden flex-shrink-0'
+        'relative flex flex-col h-full flex-shrink-0',
+        'bg-background border-r border-border overflow-hidden',
       )}
-      aria-label="Main navigation"
+      aria-label="Primary navigation"
     >
-      {/* ─── Header: Logo + Clinic Name ────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-4 min-h-[60px] relative z-10">
-        {/* Clinic avatar */}
-        <div className="w-7 h-7 rounded-[6px] bg-gradient-to-tr from-primary to-primary-hover flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 shadow-sm border border-white/10">
-          {getInitials(clinic.name)}
+      {/* ── Brand row ───────────────────────────────────── */}
+      <div className="flex items-center h-12 px-3 gap-2 border-b border-border">
+        <div className="grid place-items-center w-7 h-7 rounded-md bg-surface border border-border flex-shrink-0 text-[11px] font-bold text-primary tabular-nums">
+          {getInitials(clinic.name) || 'L'}
         </div>
-        <AnimatePresence>
-          {!sidebarCollapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.15 }}
-              className="overflow-hidden flex-1"
-            >
-              <div className="flex items-center gap-2 whitespace-nowrap">
-                <span className="text-[13px] font-semibold text-text-primary truncate">
-                  {clinic.name}
-                </span>
-                {clinic.isPro && (
-                  <span className="text-[10px] font-bold px-1.5 py-px bg-primary/10 text-primary border border-primary/20 rounded-md">
-                    PRO
-                  </span>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {!sidebarCollapsed && (
+          <div className="flex flex-col leading-none min-w-0">
+            <span className="text-[13px] font-semibold tracking-tight truncate">
+              {clinic.name || 'Linor'}
+            </span>
+            <span className="text-[10px] text-text-muted mt-0.5 truncate">
+              {clinic.isPro ? 'Pro workspace' : 'Provider portal'}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* ─── Navigation ────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-5 relative scrollbar-none">
+      {/* ── Navigation groups ──────────────────────────── */}
+      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4 scrollbar-none">
         {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="flex flex-col gap-0.5">
-            {/* Section label — hidden when collapsed */}
-            <AnimatePresence>
-              {!sidebarCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="px-2 mb-1.5"
-                >
-                  <span className="text-[10px] font-bold uppercase text-text-muted/70 tracking-[0.08em] select-none">
-                    {group.label}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {/* Nav items */}
-            <div className="flex flex-col gap-0.5">
+          <div key={group.label}>
+            {!sidebarCollapsed && (
+              <div className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                {group.label}
+              </div>
+            )}
+            <ul className="space-y-0.5">
               {group.items.map((item) => (
-                <NavItem
-                  key={item.path}
-                  {...item}
-                  collapsed={sidebarCollapsed}
-                />
+                <li key={item.path}>
+                  <NavItem {...item} collapsed={sidebarCollapsed} />
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         ))}
       </nav>
 
-      {/* ─── Footer ────────────────────────────────────────────── */}
-      <div className="px-3 py-4 space-y-1 relative z-10 border-t border-border/50 bg-surface/50 backdrop-blur-sm">
-        {/* Trust signal */}
-        <AnimatePresence>
-          {!sidebarCollapsed && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="px-2 pb-3"
-            >
-              <div className="flex items-center gap-2 text-[10px] text-text-muted/80 font-medium">
-                <Shield size={12} className="text-success opacity-80" />
-                <span className="truncate">HIPAA-conscious & encrypted</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* ── Footer: trust → theme → user → collapse ───── */}
+      <div className="border-t border-border px-2 py-2 space-y-1">
+        {!sidebarCollapsed && (
+          <div className="px-2 py-1.5 flex items-center gap-2 text-[10px] text-text-muted">
+            <ShieldCheck size={11} className="text-success" />
+            <span className="truncate">HIPAA-conscious · encrypted</span>
+          </div>
+        )}
 
         {/* Theme toggle */}
-        <Tooltip content={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'} placement="right">
+        <Tooltip
+          content={theme === 'light' ? 'Switch to dark' : 'Switch to light'}
+          placement="right"
+        >
           <button
             onClick={toggleTheme}
-            className={cn(
-              'sidebar-item w-full',
-              sidebarCollapsed && 'justify-center px-0'
-            )}
+            className={cn('sidebar-item w-full', sidebarCollapsed && 'justify-center px-0')}
+            aria-label="Toggle theme"
           >
-            {theme === 'light' ? <Moon size={15} strokeWidth={2.2} /> : <Sun size={15} strokeWidth={2.2} />}
-            <AnimatePresence>
-              {!sidebarCollapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="overflow-hidden whitespace-nowrap ml-1 text-[13px] font-medium"
-                >
-                  {theme === 'light' ? 'Dark mode' : 'Light mode'}
-                </motion.span>
-              )}
-            </AnimatePresence>
+            {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+            {!sidebarCollapsed && <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>}
           </button>
         </Tooltip>
 
-        {/* Collapse toggle */}
-        <Tooltip content={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} placement="right">
-          <button
-            onClick={toggleSidebar}
-            className={cn(
-              'sidebar-item w-full',
-              sidebarCollapsed && 'justify-center px-0'
-            )}
-          >
-            {sidebarCollapsed ? <PanelLeftOpen size={15} strokeWidth={2.2} /> : <PanelLeftClose size={15} strokeWidth={2.2} />}
-            <AnimatePresence>
-              {!sidebarCollapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="overflow-hidden whitespace-nowrap ml-1 text-[13px] font-medium"
-                >
-                  Collapse
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
-        </Tooltip>
-
-        {/* User info + Logout */}
-        <div className={cn(
-          'flex items-center gap-2 mt-2 px-1.5 py-1.5 rounded-lg border border-transparent hover:border-border/50 hover:bg-surface-secondary/50 transition-all cursor-pointer group',
-          sidebarCollapsed ? 'justify-center' : ''
-        )}>
-          <div className="w-7 h-7 rounded-full bg-surface border border-border flex items-center justify-center text-text-primary text-[11px] font-bold flex-shrink-0 shadow-sm">
+        {/* User row + logout */}
+        <div
+          className={cn(
+            'flex items-center gap-2 mt-1 p-1.5 rounded-md group',
+            'hover:bg-surface-secondary transition-colors',
+            sidebarCollapsed && 'justify-center',
+          )}
+        >
+          <div className="w-7 h-7 rounded-full bg-primary-light text-primary border border-primary/20 grid place-items-center text-[11px] font-bold flex-shrink-0">
             {getInitials(user?.name ?? 'Admin')}
           </div>
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {!sidebarCollapsed && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex-1 overflow-hidden ml-0.5"
+                className="flex-1 min-w-0"
               >
-                <div className="text-[13px] font-semibold text-text-primary truncate leading-tight">{user?.name}</div>
-                <div className="text-[11px] text-text-muted truncate leading-tight">{user?.email}</div>
+                <div className="text-[12px] font-semibold text-text-primary truncate leading-tight">
+                  {user?.name ?? 'Admin'}
+                </div>
+                <div className="text-[10px] text-text-muted truncate leading-tight">
+                  {user?.email ?? '—'}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
           {!sidebarCollapsed && (
-            <Tooltip content="Logout" placement="left">
+            <Tooltip content="Sign out" placement="top">
               <button
                 onClick={handleLogout}
-                aria-label="Logout"
-                className="text-text-muted opacity-0 group-hover:opacity-100 hover:text-danger hover:bg-danger/10 p-1.5 rounded-md transition-all duration-200"
+                aria-label="Sign out"
+                className="p-1.5 rounded text-text-muted opacity-0 group-hover:opacity-100 hover:text-danger hover:bg-danger-light transition-all"
               >
-                <LogOut size={14} strokeWidth={2.5} />
+                <LogOut size={13} />
               </button>
             </Tooltip>
           )}
         </div>
+
+        {/* Collapse toggle — last so it's always reachable */}
+        <Tooltip content={sidebarCollapsed ? 'Expand' : 'Collapse'} placement="right">
+          <button
+            onClick={toggleSidebar}
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="sidebar-item w-full justify-center"
+          >
+            {sidebarCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
+          </button>
+        </Tooltip>
       </div>
     </motion.aside>
   );

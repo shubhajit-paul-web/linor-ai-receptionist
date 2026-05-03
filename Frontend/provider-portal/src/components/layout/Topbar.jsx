@@ -2,55 +2,42 @@ import { useLocation, Link } from 'react-router-dom';
 import { Search, Bell, HelpCircle, ChevronRight } from 'lucide-react';
 import useUIStore from '../../store/useUIStore';
 import useClinicStore from '../../store/useClinicStore';
-import { cn } from '../../lib/utils';
+import { cn, getInitials } from '../../lib/utils';
 import Tooltip from '../shared/Tooltip';
+import { BREADCRUMB_MAP } from './navConfig';
 
-// Maps route paths to human-readable breadcrumb segments
-const BREADCRUMB_MAP = {
-  '/dashboard':      ['Dashboard'],
-  '/appointments':   ['Appointments'],
-  '/logs':           ['Patient Interactions', 'Chat Logs'],
-  '/faqs':           ['Chatbot Config', 'FAQs'],
-  '/widget-settings': ['Chatbot Config', 'Widget Settings'],
-  '/embed':          ['Chatbot Config', 'Embed Code'],
-  '/settings':       ['Clinic', 'Clinic Settings'],
-  '/working-hours':  ['Clinic', 'Working Hours'],
-  '/api-security':   ['Account', 'API & Security'],
-  '/billing':        ['Account', 'Billing'],
-};
-
+/**
+ * Topbar — slim chrome (h-12) modeled on admin-panel:
+ *   [breadcrumb] · · · [search ⌘K]  [bell] [help] [avatar]
+ *
+ * The breadcrumb is derived from NAV_GROUPS to keep nav and
+ * topbar in lockstep. Notification dot reflects pending appts.
+ */
 export function Topbar() {
   const { pathname } = useLocation();
-  const { openSearch, sidebarCollapsed } = useUIStore();
-  const { appointments } = useClinicStore();
+  const openSearch = useUIStore((s) => s.openSearch);
+  const { appointments, clinic } = useClinicStore();
 
-  const breadcrumbs = BREADCRUMB_MAP[pathname] ?? [pathname.replace('/', '')];
+  const breadcrumbs = BREADCRUMB_MAP[pathname] ?? [pathname.replace('/', '') || 'Dashboard'];
   const pendingCount = appointments.filter((a) => a.status === 'Pending').length;
-
-  // Determine left margin based on sidebar state
-  const leftOffset = sidebarCollapsed ? 64 : 240;
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
 
   return (
     <header
-      style={{ left: leftOffset }}
-      className={cn(
-        'fixed top-0 right-0 z-30 h-[60px]',
-        'bg-surface/95 backdrop-blur-md border-b border-border',
-        'flex items-center px-6 gap-4',
-        'transition-[left] duration-200 ease-in-out'
-      )}
+      className="flex items-center h-12 px-4 gap-3 border-b border-border bg-background/95 backdrop-blur-md"
+      aria-label="Top bar"
     >
-      {/* ─── Breadcrumb ──────────────────────────────────────────── */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 flex-1">
+      {/* Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 min-w-0">
         {breadcrumbs.map((crumb, i) => (
-          <span key={crumb} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight size={14} className="text-text-muted" />}
+          <span key={`${crumb}-${i}`} className="flex items-center gap-1.5 min-w-0">
+            {i > 0 && <ChevronRight size={12} className="text-text-muted flex-shrink-0" />}
             <span
               className={cn(
-                'text-sm',
+                'text-[13px] truncate',
                 i === breadcrumbs.length - 1
                   ? 'font-semibold text-text-primary'
-                  : 'text-text-muted'
+                  : 'text-text-muted',
               )}
             >
               {crumb}
@@ -59,57 +46,62 @@ export function Topbar() {
         ))}
       </nav>
 
-      {/* ─── Global Search Trigger ───────────────────────────────── */}
+      {/* Search trigger — opens global command palette */}
       <button
         onClick={openSearch}
-        aria-label="Open global search (Ctrl+K)"
+        aria-label="Open global search"
         className={cn(
-          'flex items-center gap-2 h-9 px-3 rounded-md border border-border',
-          'bg-surface-secondary text-text-muted text-sm',
-          'hover:border-border-strong hover:text-text-primary',
-          'transition-colors duration-150',
-          'min-w-[180px]'
+          'ml-auto flex items-center gap-2 h-7 pl-2 pr-2',
+          'rounded-md bg-surface-secondary border border-border',
+          'text-[12px] text-text-muted',
+          'hover:border-border-strong hover:text-text-secondary',
+          'transition-colors min-w-[260px]',
         )}
       >
-        <Search size={14} />
-        <span className="flex-1 text-left">Search...</span>
-        <kbd className="text-xs bg-surface px-1.5 py-0.5 rounded font-mono border border-border">
-          ⌘K
-        </kbd>
+        <Search size={13} />
+        <span className="flex-1 text-left truncate">
+          Search appointments, FAQs, settings…
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="kbd">{isMac ? '⌘' : 'Ctrl'}</span>
+          <span className="kbd">K</span>
+        </span>
       </button>
 
-      {/* ─── Right Actions ──────────────────────────────────────── */}
+      {/* Right action cluster */}
       <div className="flex items-center gap-1">
-        {/* Notification bell */}
-        <Link
-          to="/appointments"
-          aria-label={`${pendingCount} pending appointments`}
-          className="relative w-9 h-9 flex items-center justify-center rounded-md text-text-muted hover:bg-surface-secondary hover:text-text-primary transition-colors duration-100"
-        >
-          <Bell size={18} />
-          {pendingCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full ring-2 ring-surface" />
-          )}
-        </Link>
+        <Tooltip content={pendingCount ? `${pendingCount} pending` : 'No new alerts'} placement="bottom">
+          <Link
+            to="/appointments"
+            aria-label={`${pendingCount} pending appointments`}
+            className="relative w-8 h-8 grid place-items-center rounded-md text-text-muted hover:bg-surface-secondary hover:text-text-primary transition-colors"
+          >
+            <Bell size={15} />
+            {pendingCount > 0 && (
+              <span
+                className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-danger rounded-full ring-2 ring-background"
+                aria-hidden
+              />
+            )}
+          </Link>
+        </Tooltip>
 
-        {/* Help */}
-        <Tooltip content="Help & Documentation" placement="bottom">
+        <Tooltip content="Help & shortcuts" placement="bottom">
           <a
             href="#"
-            aria-label="Documentation"
-            className="w-9 h-9 flex items-center justify-center rounded-md text-text-muted hover:bg-surface-secondary hover:text-text-primary transition-colors duration-100"
+            aria-label="Help"
+            className="w-8 h-8 grid place-items-center rounded-md text-text-muted hover:bg-surface-secondary hover:text-text-primary transition-colors"
           >
-            <HelpCircle size={18} />
+            <HelpCircle size={15} />
           </a>
         </Tooltip>
 
-        {/* Clinic avatar (decorative in this demo) */}
         <Link
           to="/settings"
           aria-label="Clinic settings"
-          className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold hover:opacity-90 transition-opacity ml-1"
+          className="ml-1 w-7 h-7 rounded-full bg-primary text-primary-on grid place-items-center text-[10px] font-bold hover:opacity-90 transition-opacity"
         >
-          HC
+          {getInitials(clinic.name) || 'HC'}
         </Link>
       </div>
     </header>

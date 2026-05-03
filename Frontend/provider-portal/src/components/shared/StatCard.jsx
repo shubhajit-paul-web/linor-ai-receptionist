@@ -1,73 +1,120 @@
 import { useEffect, useRef, useState } from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { Sparkline } from './Sparkline';
 
 /**
- * Animated stat card — numbers count up from 0 on mount.
- * Follows F-pattern: value prominence top-left, icon top-right, trend bottom.
+ * StatCard — KPI tile.
+ *
+ * Visual contract:
+ *   ┌────────────────────────────────────┐
+ *   │ LABEL                  [icon]      │
+ *   │ 1,234.5  ↑3.2% vs prev    ▁▂▃▅█    │
+ *   └────────────────────────────────────┘
+ *
+ * Backwards-compatible API:
+ *   - `trend`      ('up'|'down') + `trendValue` (string)  → legacy delta row
+ *   - `delta`      { value: number, label?: string }      → preferred
+ *   - `sparkline`  number[] | { value }[]                 → optional micro-chart
  */
-export function StatCard({ label, value, suffix = '', trend, trendValue, icon: Icon, iconBg, iconColor }) {
+export function StatCard({
+  label,
+  value,
+  suffix = '',
+  // legacy delta props
+  trend,
+  trendValue,
+  // new delta + sparkline
+  delta,
+  sparkline,
+  // icon
+  icon: Icon,
+  iconBg,
+  iconColor = 'text-primary',
+  // visual
+  className,
+}) {
+  // Animate numeric values from 0 → target on mount
   const [display, setDisplay] = useState(0);
   const frameRef = useRef(null);
-  const numericValue = parseFloat(String(value).replace(/[^0-9.]/g, '')) || 0;
+  const numericValue = parseFloat(String(value).replace(/[^0-9.-]/g, '')) || 0;
+  const isNumeric = typeof value === 'number' || /^[0-9.,-]+$/.test(String(value));
 
-  // Count up animation on mount (600ms ease-out)
   useEffect(() => {
-    const duration = 800;
+    if (!isNumeric) return;
+    const duration = 700;
     const start = performance.now();
-
     const tick = (now) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease-out: 1 - (1-t)^3
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
       setDisplay(Math.round(eased * numericValue));
-
-      if (progress < 1) frameRef.current = requestAnimationFrame(tick);
+      if (t < 1) frameRef.current = requestAnimationFrame(tick);
     };
-
     frameRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [numericValue]);
+  }, [numericValue, isNumeric]);
 
-  const isPositive = trend === 'up';
-  const isNegative = trend === 'down';
+  // Resolve delta: prefer new prop, fall back to legacy
+  const resolvedDelta = delta
+    ? { positive: delta.value >= 0, text: `${delta.value >= 0 ? '+' : ''}${delta.value.toFixed(1)}%`, label: delta.label }
+    : trendValue
+      ? { positive: trend === 'up', text: trendValue }
+      : null;
 
   return (
-    <div className="bg-surface/40 backdrop-blur-xl border border-border/60 rounded-2xl p-6 flex flex-col gap-5 shadow-sm hover:shadow-md hover:border-border/80 transition-all duration-300 group">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-text-muted mb-3 group-hover:text-text-secondary transition-colors">{label}</p>
-          <p className="text-[32px] font-bold leading-none text-text-primary tracking-tight font-sans">
-            {display}{suffix}
-          </p>
-        </div>
-        {/* Colored icon circle */}
+    <div
+      className={cn(
+        'flex flex-col gap-3 p-4 rounded-xl border border-border bg-surface',
+        'hover:border-border-strong transition-colors',
+        className,
+      )}
+    >
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+          {label}
+        </span>
         {Icon && (
-          <div
+          <span
             className={cn(
-              'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner',
-              iconBg
+              'w-7 h-7 rounded-md grid place-items-center flex-shrink-0',
+              iconBg ?? 'bg-surface-secondary',
+              iconColor,
             )}
           >
-            <Icon size={20} className={iconColor} />
-          </div>
+            <Icon size={14} strokeWidth={2} />
+          </span>
         )}
       </div>
 
-      {/* Trend indicator */}
-      {trendValue && (
-        <div className={cn(
-          'flex items-center gap-1.5 text-[13px] font-medium mt-1',
-          isPositive && 'text-success',
-          isNegative && 'text-danger',
-          !isPositive && !isNegative && 'text-text-muted'
-        )}>
-          {isPositive && <TrendingUp size={14} />}
-          {isNegative && <TrendingDown size={14} />}
-          <span>{trendValue}</span>
+      {/* Value + sparkline row */}
+      <div className="flex items-end justify-between gap-3">
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="text-[24px] font-semibold tracking-tight text-text-primary tabular-nums leading-none">
+            {isNumeric ? display.toLocaleString() : value}
+            {suffix && <span className="text-text-muted font-medium ml-0.5 text-[18px]">{suffix}</span>}
+          </div>
+          {resolvedDelta && (
+            <div
+              className={cn(
+                'inline-flex items-center gap-0.5 text-[11px] font-medium',
+                resolvedDelta.positive ? 'text-success' : 'text-danger',
+              )}
+            >
+              {resolvedDelta.positive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+              <span>{resolvedDelta.text}</span>
+              {resolvedDelta.label && (
+                <span className="ml-1 text-text-muted font-normal">{resolvedDelta.label}</span>
+              )}
+            </div>
+          )}
         </div>
-      )}
+        {sparkline && sparkline.length > 1 && (
+          <div className="w-20 h-8 flex-shrink-0">
+            <Sparkline data={sparkline} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
