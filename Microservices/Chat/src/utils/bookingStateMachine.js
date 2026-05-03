@@ -1,32 +1,43 @@
-// In-memory booking sessions — fine for hackathon
-// Key: sessionId, Value: { step, data }
-const bookingSessions = new Map();
-
-const STEPS = ["ask_name", "ask_date", "ask_time", "ask_service", "confirm"];
+const redis = require("../service/redisClient");
 
 const AVAILABLE_SLOTS = [
   "10:00 AM", "11:00 AM", "12:00 PM",
   "02:00 PM", "03:00 PM", "04:00 PM",
 ];
 
-const initSession = (sessionId) => {
-  bookingSessions.set(sessionId, { step: "ask_name", data: {} });
+const SESSION_TTL = 60 * 30; // 30 minutes
+
+const sessionKey  = (id) => `booking:${id}`;
+
+const initSession = async (sessionId) => {
+  await redis.setex(
+    sessionKey(sessionId),
+    SESSION_TTL,
+    JSON.stringify({ step: "ask_name", data: {} })
+  );
 };
 
-const getSession = (sessionId) => bookingSessions.get(sessionId);
+const getSession = async (sessionId) => {
+  const raw = await redis.get(sessionKey(sessionId));
+  return raw ? JSON.parse(raw) : null;
+};
 
-const clearSession = (sessionId) => bookingSessions.delete(sessionId);
+const saveSession = async (sessionId, session) => {
+  await redis.setex(sessionKey(sessionId), SESSION_TTL, JSON.stringify(session));
+};
 
-const isInBookingFlow = (sessionId) => bookingSessions.has(sessionId);
+const clearSession = async (sessionId) => {
+  await redis.del(sessionKey(sessionId));
+};
 
-// Returns { reply, done, appointmentData }
-const handleBookingStep = (sessionId, userMessage, clinic) => {
-  let session = bookingSessions.get(sessionId);
+const isInBookingFlow = async (sessionId) => {
+  const exists = await redis.exists(sessionKey(sessionId));
+  return exists === 1;
+};
 
-  if (!session) {
-    session = { step: "ask_name", data: {} };
-    bookingSessions.set(sessionId, session);
-  }
+const handleBookingStep = async (sessionId, userMessage, clinic) => {
+  let session = await getSession(sessionId);
+  if (!session) session = { step: "ask_name", data: {} };
 
   const msg = userMessage.trim();
 
@@ -34,35 +45,34 @@ const handleBookingStep = (sessionId, userMessage, clinic) => {
     case "ask_name":
       session.data.patientName = msg;
       session.step = "ask_date";
-      bookingSessions.set(sessionId, session);
+      await saveSession(sessionId, session);
       return {
-        reply: `Nice to meet you, ${msg}! What date would you prefer for your appointment? (e.g., May 5)`,
+        reply: `Nice to meet you, ${msg}! What date would you prefer? (e.g., May 5)`,
         done: false,
       };
 
     case "ask_date":
       session.data.date = msg;
       session.step = "ask_time";
-      bookingSessions.set(sessionId, session);
+      await saveSession(sessionId, session);
       return {
-        reply: `Got it! We have the following slots available: ${AVAILABLE_SLOTS.join(", ")}. Which time works best for you?`,
+        reply: `Got it! Available slots: ${AVAILABLE_SLOTS.join(", ")}. Which works for you?`,
         done: false,
       };
 
     case "ask_time":
-      // Validate time slot
       const validSlot = AVAILABLE_SLOTS.find(
         (s) => s.toLowerCase() === msg.toLowerCase() || msg.includes(s.replace(":00", ""))
       );
       if (!validSlot) {
         return {
-          reply: `Sorry, that slot isn't available. Please choose from: ${AVAILABLE_SLOTS.join(", ")}`,
+          reply: `Sorry, that slot isn't available. Choose from: ${AVAILABLE_SLOTS.join(", ")}`,
           done: false,
         };
       }
       session.data.time = validSlot;
       session.step = "ask_service";
-      bookingSessions.set(sessionId, session);
+      await saveSession(sessionId, session);
       return {
         reply: `Perfect! Which service do you need? We offer: ${clinic.services?.join(", ") || "General Checkup"}`,
         done: false,
@@ -71,41 +81,35 @@ const handleBookingStep = (sessionId, userMessage, clinic) => {
     case "ask_service":
       session.data.service = msg;
       session.step = "confirm";
-      bookingSessions.set(sessionId, session);
+      await saveSession(sessionId, session);
       const d = session.data;
       return {
-        reply: `Just to confirm — ${d.patientName}, ${d.service} on ${d.date} at ${d.time}. Shall I go ahead and book this? (Yes / No)`,
+        reply: `To confirm — ${d.patientName}, ${d.service} on ${d.date} at ${d.time}. Shall I book this? (Yes / No)`,
         done: false,
       };
 
     case "confirm":
-      if (msg.toLowerCase().includes("yes") || msg.toLowerCase().includes("confirm") || msg.toLowerCase().includes("ok")) {
+      if (["yes", "confirm", "ok"].some((w) => msg.toLowerCase().includes(w))) {
         const appointmentData = { ...session.data };
-        clearSession(sessionId);
+        await clearSession(sessionId);
         return {
-          reply: `Your appointment is confirmed! ✅ We look forward to seeing you, ${appointmentData.patientName}. Is there anything else I can help you with?`,
+          reply: `Confirmed! ✅ We look forward to seeing you, ${appointmentData.patientName}. Anything else I can help with?`,
           done: true,
           appointmentData,
         };
       } else {
-        clearSession(sessionId);
+        await clearSession(sessionId);
         return {
-          reply: `No problem at all! Your booking has been cancelled. Feel free to book again anytime. Is there anything else I can help you with?`,
+          reply: `No problem! Booking cancelled. Feel free to book again anytime.`,
           done: true,
           appointmentData: null,
         };
       }
 
     default:
-      clearSession(sessionId);
+      await clearSession(sessionId);
       return { reply: "Let me start over. What's your name?", done: false };
   }
 };
 
-module.exports = {
-  initSession,
-  getSession,
-  clearSession,
-  isInBookingFlow,
-  handleBookingStep,
-};
+module.exports = { initSession, getSession, clearSession, isInBookingFlow, handleBookingStep };
