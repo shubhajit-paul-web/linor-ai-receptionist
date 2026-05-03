@@ -117,6 +117,81 @@ function ChatBubble({ role, text, time }) {
   );
 }
 
+// ─── Skeleton Components ──────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={cn("skeleton rounded-lg", className)} />;
+}
+
+function SkeletonStatCards() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-surface border border-border rounded-lg p-4 flex flex-col justify-between hover:shadow-sm transition-shadow">
+          <SkeletonBlock className="h-2.5 w-20" />
+          <div className="mt-2">
+            <SkeletonBlock className="h-7 w-16" />
+          </div>
+          <SkeletonBlock className="h-2.5 w-28 mt-1" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonSessionList() {
+  return (
+    <>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="p-4 border-b border-border space-y-3">
+          <div className="flex items-center justify-between">
+            <SkeletonBlock className="h-4 w-16" />
+            <SkeletonBlock className="h-3 w-20" />
+          </div>
+          <SkeletonBlock className="h-3.5 w-4/5" />
+          <div className="flex items-center justify-between">
+            <SkeletonBlock className="h-3 w-24" />
+            <SkeletonBlock className="h-3 w-12" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function SkeletonTranscriptPanel() {
+  return (
+    <div className="flex-1 flex flex-col">
+      <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-border flex-shrink-0">
+        <div className="space-y-2">
+          <SkeletonBlock className="h-5 w-48" />
+          <SkeletonBlock className="h-3 w-64" />
+        </div>
+        <SkeletonBlock className="h-8 w-20" />
+      </div>
+      <div className="flex-1 p-6 overflow-y-auto">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {[
+            { side: 'bot', w: 'w-3/5' },
+            { side: 'user', w: 'w-2/5' },
+            { side: 'bot', w: 'w-4/5' },
+            { side: 'user', w: 'w-1/2' },
+            { side: 'bot', w: 'w-2/3' },
+          ].map(({ side, w }, i) => (
+            <div key={i} className={cn('flex gap-3', side === 'user' ? 'flex-row-reverse' : 'flex-row')}>
+              {side === 'bot' && <SkeletonBlock className="w-8 h-8 rounded-full flex-shrink-0" />}
+              <div className={cn('flex flex-col gap-1.5', side === 'user' ? 'items-end' : 'items-start')}>
+                <SkeletonBlock className="h-2.5 w-16" />
+                <SkeletonBlock className={cn('h-14 rounded-2xl', w)} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Chat Logs Page ───────────────────────────────────────────────────────────
 
 export default function ChatLogs() {
@@ -124,6 +199,13 @@ export default function ChatLogs() {
   const [sessions] = useState(RICH_CHAT_SESSIONS);
   const [activeId, setActiveId] = useState(RICH_CHAT_SESSIONS[0]?.id || null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial data load — resolves after 1.2 s
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   // Handle escape key and body scroll lock for full screen
   useEffect(() => {
@@ -209,32 +291,36 @@ export default function ChatLogs() {
   return (
     <div className="flex flex-col gap-6 max-w-[1400px] mx-auto h-full">
       {/* ── Top Stats Row ──────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Sessions"
-          value={stats.total}
-          trend="12%" trendUp={true}
-          subtext="Last 30 days"
-        />
-        <StatCard
-          label="Resolution Rate"
-          value={`${stats.resolution}%`}
-          trend="2.4%" trendUp={true}
-          subtext="Resolved without human"
-        />
-        <StatCard
-          label="Avg. Session Time"
-          value={`${stats.avgDur}m`}
-          trend="0.5m" trendUp={false}
-          subtext="Time to resolution"
-        />
-        <StatCard
-          label="Positive Sentiment"
-          value={`${stats.positivePct}%`}
-          trend="5%" trendUp={true}
-          subtext="Based on AI analysis"
-        />
-      </div>
+      {isLoading ? (
+        <SkeletonStatCards />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <StatCard
+            label="Total Sessions"
+            value={stats.total}
+            trend="12%" trendUp={true}
+            subtext="Last 30 days"
+          />
+          <StatCard
+            label="Resolution Rate"
+            value={`${stats.resolution}%`}
+            trend="2.4%" trendUp={true}
+            subtext="Resolved without human"
+          />
+          <StatCard
+            label="Avg. Session Time"
+            value={`${stats.avgDur}m`}
+            trend="0.5m" trendUp={false}
+            subtext="Time to resolution"
+          />
+          <StatCard
+            label="Positive Sentiment"
+            value={`${stats.positivePct}%`}
+            trend="5%" trendUp={true}
+            subtext="Based on AI analysis"
+          />
+        </div>
+      )}
 
       {/* ── Main Workspace ──────────────────────────────────────── */}
       <motion.div 
@@ -320,6 +406,9 @@ export default function ChatLogs() {
 
           {/* List */}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {isLoading ? (
+              <SkeletonSessionList />
+            ) : (
             <AnimatePresence mode="popLayout">
               {filteredSessions.length === 0 ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -381,12 +470,15 @@ export default function ChatLogs() {
                 ))
               )}
             </AnimatePresence>
+            )}
           </div>
         </motion.div>
 
         {/* ── Right Panel: Transcript Area ────────────────────────── */}
         <motion.div layout className="flex-1 flex flex-col relative bg-[#f8f9fa] dark:bg-[#121319]">
-          {!activeSession ? (
+          {isLoading ? (
+            <SkeletonTranscriptPanel />
+          ) : !activeSession ? (
             <div className="flex-1 flex items-center justify-center bg-surface">
               <EmptyState
                 icon={MessageSquare}
