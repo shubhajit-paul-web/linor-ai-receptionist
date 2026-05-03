@@ -24,9 +24,10 @@ export const PERMISSIONS = [
   'kb.write',
   'integrations.read',
   'integrations.write',
-  // Conversations / Calls
+  // Conversations / Calls / Analytics
   'conversations.read',
   'calls.read',
+  'analytics.read',
   // Billing
   'billing.read',
   'billing.write',

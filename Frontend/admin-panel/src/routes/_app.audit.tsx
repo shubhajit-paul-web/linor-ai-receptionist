@@ -11,9 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { AuditEvent } from '@/lib/schemas';
 import { format } from 'date-fns';
+import { requirePermissions } from '@/lib/route-guard';
 
 export const Route = createFileRoute('/_app/audit')({
   component: AuditPage,
+  beforeLoad: () => requirePermissions(['audit.read']),
 });
 
 function AuditPage() {

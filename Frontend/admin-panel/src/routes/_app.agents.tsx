@@ -9,9 +9,11 @@ import { DataTable } from '@/components/data-table/data-table';
 import { Badge } from '@/components/ui/badge';
 import type { Agent } from '@/lib/schemas';
 import { formatPercent } from '@/lib/utils';
+import { requirePermissions } from '@/lib/route-guard';
 
 export const Route = createFileRoute('/_app/agents')({
   component: AgentsPage,
+  beforeLoad: () => requirePermissions(['agents.read']),
 });
 
 function AgentsPage() {

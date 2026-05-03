@@ -181,6 +181,21 @@ function generateHospitals(count: number): Hospital[] {
       createdAt: isoMonthsAgo(faker.number.int({ min: 1, max: 36 })),
       updatedAt: isoDaysAgo(faker.number.int({ min: 1, max: 30 })),
       tags: pickN(TAGS, faker.number.int({ min: 0, max: 3 })),
+      baaStatus: faker.helpers.weightedArrayElement([
+        { value: 'signed', weight: 6 },
+        { value: 'pending', weight: 2 },
+        { value: 'not-started', weight: 1 },
+        { value: 'expired', weight: 0.5 },
+      ] as const),
+      baaSignedAt: status === 'active' ? isoMonthsAgo(faker.number.int({ min: 1, max: 12 })) : null,
+      hipaaStatus: faker.helpers.weightedArrayElement([
+        { value: 'compliant', weight: 5 },
+        { value: 'review-needed', weight: 3 },
+        { value: 'non-compliant', weight: 1 },
+        { value: 'exempt', weight: 0.5 },
+      ] as const),
+      dpaSignedAt: faker.datatype.boolean(0.6) ? isoMonthsAgo(faker.number.int({ min: 1, max: 18 })) : null,
+      dataResidencyAcknowledged: faker.datatype.boolean(0.75),
     });
   }
   return out;

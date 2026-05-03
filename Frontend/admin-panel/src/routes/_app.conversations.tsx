@@ -11,12 +11,17 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { Conversation } from '@/lib/schemas';
 import { format } from 'date-fns';
+import { requirePermissions } from '@/lib/route-guard';
+import { useUiStore } from '@/stores/ui-store';
+import { conditionalMask, maskName } from '@/lib/phi';
 
 export const Route = createFileRoute('/_app/conversations')({
   component: ConversationsPage,
+  beforeLoad: () => requirePermissions(['conversations.read']),
 });
 
 function ConversationsPage() {
+  const phiMasked = useUiStore((s) => s.phiMasked);
   const [q, setQ] = useState('');
   const query = useQuery({
     queryKey: ['conversations', 'global', { q }],
@@ -37,7 +42,12 @@ function ConversationsPage() {
         accessorKey: 'startedAt',
         cell: ({ row }) => format(new Date(row.original.startedAt), 'MMM d, HH:mm'),
       },
-      { id: 'patient', header: 'Patient', accessorKey: 'patientName' },
+      {
+        id: 'patient',
+        header: 'Patient',
+        accessorKey: 'patientName',
+        cell: ({ row }) => conditionalMask(row.original.patientName, phiMasked, maskName),
+      },
       { id: 'channel', header: 'Channel', accessorKey: 'channel' },
       { id: 'topic', header: 'Topic', accessorKey: 'topic' },
       {
@@ -77,7 +87,7 @@ function ConversationsPage() {
         cell: ({ row }) => row.original.csat?.toFixed(1) ?? '—',
       },
     ],
-    [],
+    [phiMasked],
   );
 
   return (

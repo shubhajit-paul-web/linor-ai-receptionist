@@ -12,12 +12,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { User, UserScope } from '@/lib/schemas';
 import { format } from 'date-fns';
+import { requirePermissions } from '@/lib/route-guard';
+import { useUiStore } from '@/stores/ui-store';
+import { conditionalMask, maskEmail } from '@/lib/phi';
 
 export const Route = createFileRoute('/_app/users')({
   component: UsersPage,
+  beforeLoad: () => requirePermissions(['users.read']),
 });
 
 function UsersPage() {
+  const phiMasked = useUiStore((s) => s.phiMasked);
   const [q, setQ] = useState('');
   const [scope, setScope] = useState<UserScope | null>(null);
   const query = useQuery({
@@ -34,7 +39,7 @@ function UsersPage() {
         cell: ({ row }) => (
           <div className="flex flex-col">
             <span className="text-[var(--color-primary)]">{row.original.name}</span>
-            <span className="text-[10px] text-[var(--color-tertiary)]">{row.original.email}</span>
+            <span className="text-[10px] text-[var(--color-tertiary)]">{conditionalMask(row.original.email, phiMasked, maskEmail)}</span>
           </div>
         ),
       },
@@ -82,7 +87,7 @@ function UsersPage() {
           row.original.lastSeenAt ? format(new Date(row.original.lastSeenAt), 'MMM d, HH:mm') : '—',
       },
     ],
-    [],
+    [phiMasked],
   );
 
   return (

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
-  password: z.string().min(4, 'Password is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -32,7 +32,7 @@ function LoginPage() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: 'avery@linor.dev', password: 'demo' },
+    defaultValues: { email: 'avery@linor.dev', password: 'demo1234' },
   });
 
   async function onSubmit(values: FormValues) {
@@ -95,7 +95,20 @@ function LoginPage() {
         </Button>
       </form>
 
-      <div className="mt-6 pt-4 border-t border-[var(--color-border-subtle)] text-[11px] text-[var(--color-tertiary)] leading-relaxed">
+      <div className="mt-5 pt-4 border-t border-[var(--color-border-subtle)] text-[10px] text-[var(--color-tertiary)] leading-relaxed space-y-2">
+        <p>
+          By signing in you acknowledge that this system processes
+          Protected Health Information (PHI) governed by{' '}
+          <strong className="text-[var(--color-secondary)]">HIPAA</strong>,{' '}
+          <strong className="text-[var(--color-secondary)]">HITECH</strong>, and
+          applicable state privacy laws. Unauthorized access is prohibited and
+          may result in civil and criminal penalties.
+        </p>
+        <p>
+          All activity is logged for audit and compliance purposes.
+        </p>
+      </div>
+      <div className="mt-3 pt-3 border-t border-[var(--color-border-subtle)] text-[11px] text-[var(--color-tertiary)] leading-relaxed">
         <p className="font-medium text-[var(--color-secondary)] mb-1">Demo mode</p>
         Any credentials work. Email prefix selects the role:
         <span className="text-[var(--color-secondary)]"> ops@</span>,{' '}

@@ -10,6 +10,12 @@ export type HospitalStatus = z.infer<typeof hospitalStatusSchema>;
 export const regionSchema = z.enum(['us-east', 'us-west', 'eu-west', 'ap-south', 'ap-southeast']);
 export type Region = z.infer<typeof regionSchema>;
 
+export const baaStatusSchema = z.enum(['not-started', 'pending', 'signed', 'expired']);
+export type BaaStatus = z.infer<typeof baaStatusSchema>;
+
+export const hipaaComplianceStatusSchema = z.enum(['compliant', 'review-needed', 'non-compliant', 'exempt']);
+export type HipaaComplianceStatus = z.infer<typeof hipaaComplianceStatusSchema>;
+
 export const hospitalSchema = z.object({
   id: idSchema,
   slug: z.string(),
@@ -36,6 +42,15 @@ export const hospitalSchema = z.object({
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
   tags: z.array(z.string()).default([]),
+  /** Business Associate Agreement — required under HIPAA for all covered entities. */
+  baaStatus: baaStatusSchema.default('not-started'),
+  baaSignedAt: timestampSchema.nullable().default(null),
+  /** Overall HIPAA compliance posture for this tenant. */
+  hipaaStatus: hipaaComplianceStatusSchema.default('review-needed'),
+  /** Whether a Data Processing Agreement (GDPR) is in place. */
+  dpaSignedAt: timestampSchema.nullable().default(null),
+  /** Data residency region acknowledged by the tenant. */
+  dataResidencyAcknowledged: z.boolean().default(false),
 });
 
 export type Hospital = z.infer<typeof hospitalSchema>;

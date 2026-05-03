@@ -14,19 +14,10 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AuthLoginRouteImport } from './routes/_auth.login'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
-import { Route as AppSupportRouteImport } from './routes/_app.support'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppInfraRouteImport } from './routes/_app.infra'
-import { Route as AppIncidentsRouteImport } from './routes/_app.incidents'
-import { Route as AppFlagsRouteImport } from './routes/_app.flags'
 import { Route as AppConversationsRouteImport } from './routes/_app.conversations'
-import { Route as AppComplianceRouteImport } from './routes/_app.compliance'
 import { Route as AppCallsRouteImport } from './routes/_app.calls'
-import { Route as AppBranchesRouteImport } from './routes/_app.branches'
-import { Route as AppBillingRouteImport } from './routes/_app.billing'
 import { Route as AppAuditRouteImport } from './routes/_app.audit'
-import { Route as AppApiKeysRouteImport } from './routes/_app.api-keys'
-import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppAgentsRouteImport } from './routes/_app.agents'
 import { Route as AppHospitalsIndexRouteImport } from './routes/_app.hospitals.index'
@@ -55,29 +46,9 @@ const AppUsersRoute = AppUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
-const AppSupportRoute = AppSupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInfraRoute = AppInfraRouteImport.update({
-  id: '/infra',
-  path: '/infra',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppIncidentsRoute = AppIncidentsRouteImport.update({
-  id: '/incidents',
-  path: '/incidents',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFlagsRoute = AppFlagsRouteImport.update({
-  id: '/flags',
-  path: '/flags',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConversationsRoute = AppConversationsRouteImport.update({
@@ -85,39 +56,14 @@ const AppConversationsRoute = AppConversationsRouteImport.update({
   path: '/conversations',
   getParentRoute: () => AppRoute,
 } as any)
-const AppComplianceRoute = AppComplianceRouteImport.update({
-  id: '/compliance',
-  path: '/compliance',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppCallsRoute = AppCallsRouteImport.update({
   id: '/calls',
   path: '/calls',
   getParentRoute: () => AppRoute,
 } as any)
-const AppBranchesRoute = AppBranchesRouteImport.update({
-  id: '/branches',
-  path: '/branches',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppBillingRoute = AppBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAuditRoute = AppAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppApiKeysRoute = AppApiKeysRouteImport.update({
-  id: '/api-keys',
-  path: '/api-keys',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
@@ -145,19 +91,10 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/agents': typeof AppAgentsRoute
   '/analytics': typeof AppAnalyticsRoute
-  '/announcements': typeof AppAnnouncementsRoute
-  '/api-keys': typeof AppApiKeysRoute
   '/audit': typeof AppAuditRoute
-  '/billing': typeof AppBillingRoute
-  '/branches': typeof AppBranchesRoute
   '/calls': typeof AppCallsRoute
-  '/compliance': typeof AppComplianceRoute
   '/conversations': typeof AppConversationsRoute
-  '/flags': typeof AppFlagsRoute
-  '/incidents': typeof AppIncidentsRoute
-  '/infra': typeof AppInfraRoute
   '/settings': typeof AppSettingsRoute
-  '/support': typeof AppSupportRoute
   '/users': typeof AppUsersRoute
   '/login': typeof AuthLoginRoute
   '/hospitals/$hospitalId': typeof AppHospitalsHospitalIdRoute
@@ -167,19 +104,10 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/agents': typeof AppAgentsRoute
   '/analytics': typeof AppAnalyticsRoute
-  '/announcements': typeof AppAnnouncementsRoute
-  '/api-keys': typeof AppApiKeysRoute
   '/audit': typeof AppAuditRoute
-  '/billing': typeof AppBillingRoute
-  '/branches': typeof AppBranchesRoute
   '/calls': typeof AppCallsRoute
-  '/compliance': typeof AppComplianceRoute
   '/conversations': typeof AppConversationsRoute
-  '/flags': typeof AppFlagsRoute
-  '/incidents': typeof AppIncidentsRoute
-  '/infra': typeof AppInfraRoute
   '/settings': typeof AppSettingsRoute
-  '/support': typeof AppSupportRoute
   '/users': typeof AppUsersRoute
   '/login': typeof AuthLoginRoute
   '/hospitals/$hospitalId': typeof AppHospitalsHospitalIdRoute
@@ -191,19 +119,10 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_app/agents': typeof AppAgentsRoute
   '/_app/analytics': typeof AppAnalyticsRoute
-  '/_app/announcements': typeof AppAnnouncementsRoute
-  '/_app/api-keys': typeof AppApiKeysRoute
   '/_app/audit': typeof AppAuditRoute
-  '/_app/billing': typeof AppBillingRoute
-  '/_app/branches': typeof AppBranchesRoute
   '/_app/calls': typeof AppCallsRoute
-  '/_app/compliance': typeof AppComplianceRoute
   '/_app/conversations': typeof AppConversationsRoute
-  '/_app/flags': typeof AppFlagsRoute
-  '/_app/incidents': typeof AppIncidentsRoute
-  '/_app/infra': typeof AppInfraRoute
   '/_app/settings': typeof AppSettingsRoute
-  '/_app/support': typeof AppSupportRoute
   '/_app/users': typeof AppUsersRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_app/': typeof AppIndexRoute
@@ -216,19 +135,10 @@ export interface FileRouteTypes {
     | '/'
     | '/agents'
     | '/analytics'
-    | '/announcements'
-    | '/api-keys'
     | '/audit'
-    | '/billing'
-    | '/branches'
     | '/calls'
-    | '/compliance'
     | '/conversations'
-    | '/flags'
-    | '/incidents'
-    | '/infra'
     | '/settings'
-    | '/support'
     | '/users'
     | '/login'
     | '/hospitals/$hospitalId'
@@ -238,19 +148,10 @@ export interface FileRouteTypes {
     | '/'
     | '/agents'
     | '/analytics'
-    | '/announcements'
-    | '/api-keys'
     | '/audit'
-    | '/billing'
-    | '/branches'
     | '/calls'
-    | '/compliance'
     | '/conversations'
-    | '/flags'
-    | '/incidents'
-    | '/infra'
     | '/settings'
-    | '/support'
     | '/users'
     | '/login'
     | '/hospitals/$hospitalId'
@@ -261,19 +162,10 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_app/agents'
     | '/_app/analytics'
-    | '/_app/announcements'
-    | '/_app/api-keys'
     | '/_app/audit'
-    | '/_app/billing'
-    | '/_app/branches'
     | '/_app/calls'
-    | '/_app/compliance'
     | '/_app/conversations'
-    | '/_app/flags'
-    | '/_app/incidents'
-    | '/_app/infra'
     | '/_app/settings'
-    | '/_app/support'
     | '/_app/users'
     | '/_auth/login'
     | '/_app/'
@@ -323,39 +215,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/support': {
-      id: '/_app/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof AppSupportRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/infra': {
-      id: '/_app/infra'
-      path: '/infra'
-      fullPath: '/infra'
-      preLoaderRoute: typeof AppInfraRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/incidents': {
-      id: '/_app/incidents'
-      path: '/incidents'
-      fullPath: '/incidents'
-      preLoaderRoute: typeof AppIncidentsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/flags': {
-      id: '/_app/flags'
-      path: '/flags'
-      fullPath: '/flags'
-      preLoaderRoute: typeof AppFlagsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/conversations': {
@@ -365,13 +229,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConversationsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/compliance': {
-      id: '/_app/compliance'
-      path: '/compliance'
-      fullPath: '/compliance'
-      preLoaderRoute: typeof AppComplianceRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/calls': {
       id: '/_app/calls'
       path: '/calls'
@@ -379,39 +236,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCallsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/branches': {
-      id: '/_app/branches'
-      path: '/branches'
-      fullPath: '/branches'
-      preLoaderRoute: typeof AppBranchesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/billing': {
-      id: '/_app/billing'
-      path: '/billing'
-      fullPath: '/billing'
-      preLoaderRoute: typeof AppBillingRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/audit': {
       id: '/_app/audit'
       path: '/audit'
       fullPath: '/audit'
       preLoaderRoute: typeof AppAuditRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/api-keys': {
-      id: '/_app/api-keys'
-      path: '/api-keys'
-      fullPath: '/api-keys'
-      preLoaderRoute: typeof AppApiKeysRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/announcements': {
-      id: '/_app/announcements'
-      path: '/announcements'
-      fullPath: '/announcements'
-      preLoaderRoute: typeof AppAnnouncementsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/analytics': {
@@ -448,19 +277,10 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAgentsRoute: typeof AppAgentsRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
-  AppAnnouncementsRoute: typeof AppAnnouncementsRoute
-  AppApiKeysRoute: typeof AppApiKeysRoute
   AppAuditRoute: typeof AppAuditRoute
-  AppBillingRoute: typeof AppBillingRoute
-  AppBranchesRoute: typeof AppBranchesRoute
   AppCallsRoute: typeof AppCallsRoute
-  AppComplianceRoute: typeof AppComplianceRoute
   AppConversationsRoute: typeof AppConversationsRoute
-  AppFlagsRoute: typeof AppFlagsRoute
-  AppIncidentsRoute: typeof AppIncidentsRoute
-  AppInfraRoute: typeof AppInfraRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppSupportRoute: typeof AppSupportRoute
   AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
   AppHospitalsHospitalIdRoute: typeof AppHospitalsHospitalIdRoute
@@ -470,19 +290,10 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAgentsRoute: AppAgentsRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
-  AppAnnouncementsRoute: AppAnnouncementsRoute,
-  AppApiKeysRoute: AppApiKeysRoute,
   AppAuditRoute: AppAuditRoute,
-  AppBillingRoute: AppBillingRoute,
-  AppBranchesRoute: AppBranchesRoute,
   AppCallsRoute: AppCallsRoute,
-  AppComplianceRoute: AppComplianceRoute,
   AppConversationsRoute: AppConversationsRoute,
-  AppFlagsRoute: AppFlagsRoute,
-  AppIncidentsRoute: AppIncidentsRoute,
-  AppInfraRoute: AppInfraRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppSupportRoute: AppSupportRoute,
   AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,
   AppHospitalsHospitalIdRoute: AppHospitalsHospitalIdRoute,

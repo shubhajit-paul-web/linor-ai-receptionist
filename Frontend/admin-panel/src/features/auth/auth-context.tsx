@@ -8,6 +8,8 @@ export interface AuthUser {
   email: string;
   role: Role;
   avatarUrl?: string;
+  /** ISO timestamp of when this session started. */
+  sessionStartedAt?: string;
 }
 
 interface AuthState {
@@ -49,6 +51,13 @@ function persistUser(user: AuthUser | null): void {
   }
 }
 
+/** Clear all sensitive data from client storage on sign-out. */
+function clearSensitiveStorage(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(STORAGE_KEY);
+  window.sessionStorage.clear();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,13 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       name: email.split('@')[0]?.replace(/^./, (c) => c.toUpperCase()) ?? DEFAULT_USER.name,
       role,
+      sessionStartedAt: new Date().toISOString(),
     };
     persistUser(next);
     setUser(next);
   }, []);
 
   const signOut = useCallback(() => {
-    persistUser(null);
+    clearSensitiveStorage();
     setUser(null);
   }, []);
 

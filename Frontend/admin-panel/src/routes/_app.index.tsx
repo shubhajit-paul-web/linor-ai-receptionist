@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Activity,
   AlertTriangle,
   Banknote,
   Building2,
@@ -10,47 +9,34 @@ import {
   HeartPulse,
   MessageSquare,
   Phone,
-  Sparkles,
   Star,
   TrendingUp,
 } from 'lucide-react';
 import { apiCall } from '@/lib/api/client';
-import { getOverview, listServiceHealth } from '@/lib/api/operations';
+import { getOverview } from '@/lib/api/operations';
 import { PageHeader } from '@/components/layout/page-header';
 import { KpiCard } from '@/components/charts/kpi-card';
 import { AreaChart } from '@/components/charts/area-chart';
 import { DonutChart } from '@/components/charts/donut-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { StatusDot, type StatusTone } from '@/components/ui/status-dot';
+import { StatusDot } from '@/components/ui/status-dot';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/feedback/error-state';
 import { formatCompact, formatCurrency, formatPercent } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { CHART_COLORS } from '@/components/charts/chart-tokens';
-import type { ServiceStatus } from '@/lib/schemas';
 
 export const Route = createFileRoute('/_app/')({
   component: OverviewPage,
 });
 
-const SERVICE_STATUS_TONE: Record<ServiceStatus, StatusTone> = {
-  operational: 'success',
-  degraded: 'warning',
-  'partial-outage': 'warning',
-  outage: 'danger',
-  maintenance: 'info',
-};
-
 function OverviewPage() {
   const overview = useQuery({
     queryKey: ['overview'],
     queryFn: () => apiCall(getOverview, undefined),
-  });
-  const services = useQuery({
-    queryKey: ['infra', 'health', 'topbar'],
-    queryFn: () => apiCall(listServiceHealth, undefined),
+    staleTime: 30_000,
   });
 
   if (overview.isError) {
@@ -70,7 +56,7 @@ function OverviewPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Overview"
-        description="Real-time picture of every Linor tenant — adoption, quality, revenue, and infrastructure health."
+        description="Real-time picture of every tenant — adoption, quality, and revenue."
         meta={
           <>
             <Badge tone="success">
@@ -83,18 +69,12 @@ function OverviewPage() {
           </>
         }
         actions={
-          <>
-            <Button variant="secondary" size="md">
-              <Sparkles className="size-3.5" />
-              Customize
-            </Button>
-            <Button variant="primary" size="md" asChild>
-              <Link to="/hospitals">
-                Browse hospitals
-                <ChevronRight className="size-3.5" />
-              </Link>
-            </Button>
-          </>
+          <Button variant="primary" size="md" asChild>
+            <Link to="/hospitals">
+              Browse hospitals
+              <ChevronRight className="size-3.5" />
+            </Link>
+          </Button>
         }
       />
 
@@ -223,48 +203,8 @@ function OverviewPage() {
         </Card>
       </section>
 
-      {/* Lower row — health, risk, activity */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="inline-flex items-center gap-2">
-                <Activity className="size-3.5 text-[var(--color-tertiary)]" />
-                System health
-              </CardTitle>
-              <Link
-                to="/infra"
-                className="text-[11px] text-[var(--color-tertiary)] hover:text-[var(--color-secondary)] inline-flex items-center gap-1"
-              >
-                Status page
-                <ChevronRight className="size-3" />
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1">
-            {services.data ? (
-              services.data.slice(0, 8).map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center gap-2 h-7 px-2 -mx-2 rounded-[6px] hover:bg-[var(--color-elevated)] transition-colors"
-                >
-                  <StatusDot tone={SERVICE_STATUS_TONE[s.status]} pulse={s.status !== 'operational'} />
-                  <span className="text-xs text-[var(--color-primary)] truncate">{s.name}</span>
-                  <span className="ml-auto text-[10px] text-[var(--color-tertiary)] tabular-nums">
-                    p95 {s.p95LatencyMs}ms
-                  </span>
-                </div>
-              ))
-            ) : (
-              <>
-                <Skeleton className="h-7 w-full" />
-                <Skeleton className="h-7 w-full" />
-                <Skeleton className="h-7 w-full" />
-              </>
-            )}
-          </CardContent>
-        </Card>
-
+      {/* Lower row — risk + activity */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card>
           <CardHeader>
             <CardTitle className="inline-flex items-center gap-2">
