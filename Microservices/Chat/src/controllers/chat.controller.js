@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const { callAI } = require("../utils/geminiClient");
 const { buildSystemPrompt } = require("../utils/promptBuilder");
+const { queryKnowledge } = require("../service/vectorService");
 const redis = require("../service/redisClient");
 const {
   detectBookingIntent,
@@ -13,8 +14,8 @@ const {
   handleBookingStep,
 } = require("../utils/bookingStateMachine");
 
-const RATE_LIMIT = 20; // max messages per minute per session
-const RATE_LIMIT_TTL = 60; // seconds
+const RATE_LIMIT = 20;
+const RATE_LIMIT_TTL = 60;
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/chat
@@ -35,29 +36,25 @@ exports.chat = asyncHandler(async (req, res) => {
       .json({ success: false, message: "sessionId is required" });
   }
 
-  // ── Rate limiting — stop spam ──────────────────────────────
+  // ── Rate limiting ──────────────────────────────────────────
   try {
     const rateLimitKey = `ratelimit:${sessionId}`;
     const requests = await redis.incr(rateLimitKey);
     if (requests === 1) await redis.expire(rateLimitKey, RATE_LIMIT_TTL);
-
     if (requests > RATE_LIMIT) {
       return res.status(429).json({
         success: false,
-        message:
-          "Too many messages. Please slow down and try again in a minute.",
+        message: "Too many messages. Please slow down.",
       });
     }
   } catch {
-    // Redis rate limit failed — don't block the user, just continue
-    console.warn("Rate limit check failed — continuing without it");
+    console.warn("Rate limit check failed — continuing");
   }
 
   // ── Step 1: Already in booking flow ───────────────────────
   const inBooking = await isInBookingFlow(sessionId);
   if (inBooking) {
     const result = await handleBookingStep(sessionId, message, clinic);
-
     if (result.done && result.appointmentData) {
       await saveAppointment(
         req.headers["x-api-key"],
@@ -66,7 +63,6 @@ exports.chat = asyncHandler(async (req, res) => {
         result.appointmentData,
       );
     }
-
     return res.json({ success: true, reply: result.reply });
   }
 
@@ -79,11 +75,45 @@ exports.chat = asyncHandler(async (req, res) => {
     });
   }
 
-  // ── Step 3: Symptom + tone detection ──────────────────────
+  // ── Step 3: Detect symptom + tone ─────────────────────────
   const isSymptom = detectSymptomIntent(message);
   const tone = detectTone(message);
 
-  // ── Step 4: Fetch FAQs from FAQ service ───────────────────
+  // ── Step 4: RAG — query Pinecone if symptom detected ──────
+  let ragContext = [];
+  if (isSymptom) {
+    try {
+      const results = await queryKnowledge({
+        text: message,
+        topK: 3,
+      });
+
+      // Extract metadata from Pinecone results
+      ragContext = results.map((r) => ({
+        text: r.fields?.text || "",
+        condition: r.fields?.condition || "",
+        specialist: r.fields?.specialist || "",
+        urgency: r.fields?.urgency || "MEDIUM",
+        followupQuestions: r.fields?.followupQuestions || "",
+        advice: r.fields?.advice || "",
+        score: r._score || 0,
+      }));
+
+      console.log(`🔍 RAG found ${ragContext.length} relevant medical chunks`);
+      if (ragContext[0]) {
+        console.log(
+          `Top match: ${ragContext[0].condition} (score: ${ragContext[0].score?.toFixed(3)})`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        "Pinecone query failed — continuing without RAG:",
+        err.message,
+      );
+    }
+  }
+
+  // ── Step 5: Fetch FAQs ─────────────────────────────────────
   let faqs = [];
   try {
     const faqRes = await fetch(
@@ -95,35 +125,25 @@ exports.chat = asyncHandler(async (req, res) => {
       faqs = faqData.data || [];
     }
   } catch {
-    console.warn("FAQ service unavailable — continuing without FAQs");
+    console.warn("FAQ service unavailable");
   }
 
-  // ── Step 5: Build prompt ───────────────────────────────────
-  let systemPrompt = buildSystemPrompt(clinic, faqs);
+  // ── Step 6: Build prompt with RAG context ─────────────────
+  let systemPrompt = buildSystemPrompt(clinic, faqs, ragContext);
 
+  // Tone injection
   const toneInstructions = {
     urgent:
-      "\n\nCRITICAL: Patient may be in distress. Respond calmly and fast. If life-threatening, tell them to call 112 immediately.",
+      "\n\nCRITICAL: Patient may be in distress. If life-threatening, tell them to call 112 immediately.",
     anxious:
-      "\n\nIMPORTANT: Patient sounds nervous. Acknowledge their worry with warmth FIRST before anything else.",
+      "\n\nIMPORTANT: Patient sounds nervous. Acknowledge their worry with warmth FIRST.",
     frustrated:
       "\n\nIMPORTANT: Patient is frustrated. Apologize sincerely first, then help.",
     normal: "",
   };
   systemPrompt += toneInstructions[tone] || "";
 
-  if (isSymptom) {
-    systemPrompt += `
-
-CURRENT TURN: Patient is describing a health problem or symptoms.
-Follow the 4-step symptom analysis flow:
-1. Acknowledge with empathy
-2. Suggest what it might be (carefully, not as diagnosis)
-3. Recommend the right specialist from our available services
-4. Check if that specialist is available at our clinic and offer booking if yes`;
-  }
-
-  // ── Step 6: Call AI ────────────────────────────────────────
+  // ── Step 7: Call AI ────────────────────────────────────────
   const recentHistory = [
     ...history.slice(-6).map((m) => ({ role: m.role, content: m.content })),
     { role: "user", content: message },
@@ -134,7 +154,7 @@ Follow the 4-step symptom analysis flow:
     aiReply = await callAI(systemPrompt, recentHistory);
   } catch (err) {
     console.error("AI error:", err.message);
-    aiReply = `I'm having a little trouble right now. Please call us at ${clinic.phone || "our clinic"} for immediate assistance.`;
+    aiReply = `I'm having trouble right now. Please call us at ${clinic.phone || "our clinic"} for immediate assistance.`;
   }
 
   return res.json({ success: true, reply: aiReply });
@@ -157,7 +177,7 @@ exports.getClinicInfo = asyncHandler(async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// Helper — save confirmed appointment
+// Helper — save appointment
 // ─────────────────────────────────────────────────────────────
 const saveAppointment = async (apiKey, user_id, sessionId, data) => {
   try {
