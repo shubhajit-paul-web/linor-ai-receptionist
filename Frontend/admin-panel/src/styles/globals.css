@@ -104,6 +104,23 @@
   --color-accent-subtle: oklch(95% 0.04 268);
   --color-accent-on: oklch(99% 0.003 270);
 
+  /* Semantic */
+  --color-success: oklch(55% 0.16 150);
+  --color-success-subtle: oklch(95% 0.06 150);
+  --color-success-on: oklch(98% 0.003 150);
+
+  --color-warning: oklch(65% 0.14 75);
+  --color-warning-subtle: oklch(95% 0.06 75);
+  --color-warning-on: oklch(20% 0.02 75);
+
+  --color-danger: oklch(55% 0.2 25);
+  --color-danger-subtle: oklch(95% 0.08 25);
+  --color-danger-on: oklch(98% 0.003 25);
+
+  --color-info: oklch(55% 0.13 230);
+  --color-info-subtle: oklch(95% 0.06 230);
+  --color-info-on: oklch(98% 0.003 230);
+
   --shadow-hairline: 0 0 0 1px oklch(0% 0 0 / 0.08);
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
   --shadow-md: 0 4px 12px -2px oklch(0% 0 0 / 0.08), 0 0 0 1px oklch(0% 0 0 / 0.04);
