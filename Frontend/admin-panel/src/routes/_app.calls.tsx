@@ -10,12 +10,17 @@ import { Badge } from '@/components/ui/badge';
 import type { Call } from '@/lib/schemas';
 import { format } from 'date-fns';
 import { formatPercent } from '@/lib/utils';
+import { requirePermissions } from '@/lib/route-guard';
+import { useUiStore } from '@/stores/ui-store';
+import { conditionalMask, maskPhone } from '@/lib/phi';
 
 export const Route = createFileRoute('/_app/calls')({
   component: CallsPage,
+  beforeLoad: () => requirePermissions(['calls.read']),
 });
 
 function CallsPage() {
+  const phiMasked = useUiStore((s) => s.phiMasked);
   const query = useQuery({
     queryKey: ['calls', 'global'],
     queryFn: () => apiCall(listCalls, { pageSize: 200, sort: 'startedAt', dir: 'desc' }),
@@ -29,8 +34,18 @@ function CallsPage() {
         accessorKey: 'startedAt',
         cell: ({ row }) => format(new Date(row.original.startedAt), 'MMM d, HH:mm'),
       },
-      { id: 'from', header: 'From', accessorKey: 'fromNumber' },
-      { id: 'to', header: 'To', accessorKey: 'toNumber' },
+      {
+        id: 'from',
+        header: 'From',
+        accessorKey: 'fromNumber',
+        cell: ({ row }) => conditionalMask(row.original.fromNumber, phiMasked, maskPhone),
+      },
+      {
+        id: 'to',
+        header: 'To',
+        accessorKey: 'toNumber',
+        cell: ({ row }) => conditionalMask(row.original.toNumber, phiMasked, maskPhone),
+      },
       {
         id: 'status',
         header: 'Status',
@@ -80,7 +95,7 @@ function CallsPage() {
         cell: ({ row }) => `${row.original.endToEndLatencyMs}ms`,
       },
     ],
-    [],
+    [phiMasked],
   );
 
   return (

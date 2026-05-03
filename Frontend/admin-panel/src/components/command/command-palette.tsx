@@ -10,12 +10,7 @@ import {
   MessagesSquare,
   Phone,
   ChartLine,
-  Activity,
-  AlertTriangle,
   FileText,
-  Flag,
-  Bell,
-  ShieldCheck,
   Settings,
   Search,
 } from 'lucide-react';
@@ -44,13 +39,7 @@ const STATIC_NAV: CommandTarget[] = [
   { id: 'conversations', group: 'Navigate', icon: MessagesSquare, label: 'Conversations', to: '/conversations' },
   { id: 'calls', group: 'Navigate', icon: Phone, label: 'Calls', to: '/calls' },
   { id: 'analytics', group: 'Navigate', icon: ChartLine, label: 'Analytics', to: '/analytics' },
-  { id: 'billing', group: 'Navigate', icon: ChartLine, label: 'Billing', to: '/billing' },
-  { id: 'infra', group: 'Navigate', icon: Activity, label: 'Infrastructure', to: '/infra' },
-  { id: 'incidents', group: 'Navigate', icon: AlertTriangle, label: 'Incidents', to: '/incidents' },
   { id: 'audit', group: 'Navigate', icon: FileText, label: 'Audit Log', to: '/audit' },
-  { id: 'flags', group: 'Navigate', icon: Flag, label: 'Feature Flags', to: '/flags' },
-  { id: 'announcements', group: 'Navigate', icon: Bell, label: 'Announcements', to: '/announcements' },
-  { id: 'compliance', group: 'Navigate', icon: ShieldCheck, label: 'Compliance', to: '/compliance' },
   { id: 'settings', group: 'Navigate', icon: Settings, label: 'Settings', to: '/settings' },
 ];
 

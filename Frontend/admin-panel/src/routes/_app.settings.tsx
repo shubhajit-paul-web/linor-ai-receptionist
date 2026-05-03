@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Bell, KeyRound, Palette, ShieldCheck, Users } from 'lucide-react';
+import { Palette, Shield, Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,9 +10,12 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/features/auth/auth-context';
 import { ROLES } from '@/app/permissions';
 import { Badge } from '@/components/ui/badge';
+import { requirePermissions } from '@/lib/route-guard';
+import { SESSION_POLICY, DATA_RETENTION, PASSWORD_POLICY } from '@/lib/compliance';
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsPage,
+  beforeLoad: () => requirePermissions(['settings.read']),
 });
 
 function SettingsPage() {
@@ -31,14 +34,8 @@ function SettingsPage() {
           <TabsTrigger value="team">
             <Users className="size-3" /> Team & roles
           </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="size-3" /> Notifications
-          </TabsTrigger>
           <TabsTrigger value="security">
-            <ShieldCheck className="size-3" /> Security
-          </TabsTrigger>
-          <TabsTrigger value="api">
-            <KeyRound className="size-3" /> API
+            <Shield className="size-3" /> Security & Privacy
           </TabsTrigger>
         </TabsList>
 
@@ -61,38 +58,10 @@ function SettingsPage() {
           <TeamPanel />
         </TabsContent>
 
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-[var(--color-secondary)] leading-relaxed">
-              Routing rules, severity preferences, and per-channel preferences (email, Slack, Webhook).
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-[var(--color-secondary)] leading-relaxed">
-              Sessions, MFA, IP allow-list, and audit retention policies.
-            </CardContent>
-          </Card>
+          <SecurityPrivacyPanel />
         </TabsContent>
 
-        <TabsContent value="api">
-          <Card>
-            <CardHeader>
-              <CardTitle>API</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-[var(--color-secondary)] leading-relaxed">
-              Global API keys, webhook signing secrets, and rate limit configuration.
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
@@ -143,6 +112,109 @@ function AppearancePanel() {
                 {d}
               </Button>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SecurityPrivacyPanel() {
+  const phiMasked = useUiStore((s) => s.phiMasked);
+  const togglePhiMask = useUiStore((s) => s.togglePhiMask);
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>PHI Display</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-xs text-[var(--color-tertiary)] leading-relaxed">
+            When enabled, patient names, phone numbers, and emails are masked
+            in all data tables. Recommended when screen-sharing or in public areas.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button
+              variant={phiMasked ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={togglePhiMask}
+            >
+              {phiMasked ? 'PHI Masked' : 'PHI Visible'}
+            </Button>
+            <Badge tone={phiMasked ? 'success' : 'warning'}>
+              {phiMasked ? 'Protected' : 'Visible'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Session Policy</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Inactivity warning</span>
+            <span>{SESSION_POLICY.warnAfterMinutes} min</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Auto sign-out</span>
+            <span>{SESSION_POLICY.logoutAfterMinutes} min</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Max session length</span>
+            <span>{SESSION_POLICY.maxSessionHours} hours</span>
+          </div>
+          <p className="text-[10px] text-[var(--color-tertiary)] mt-1">
+            Per HIPAA §164.312(a)(2)(iii) — Automatic logoff.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Password Policy</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Min length</span>
+            <span>{PASSWORD_POLICY.minLength} characters</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Require uppercase</span>
+            <Badge tone={PASSWORD_POLICY.requireUppercase ? 'success' : 'neutral'}>
+              {PASSWORD_POLICY.requireUppercase ? 'Yes' : 'No'}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Require digit</span>
+            <Badge tone={PASSWORD_POLICY.requireDigit ? 'success' : 'neutral'}>
+              {PASSWORD_POLICY.requireDigit ? 'Yes' : 'No'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Retention</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Default retention</span>
+            <span>{DATA_RETENTION.defaultYears} years</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Audit logs</span>
+            <span>{DATA_RETENTION.auditLogYears} years</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Session logs</span>
+            <span>{DATA_RETENTION.sessionLogDays} days</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">PHI access logs</span>
+            <span>{DATA_RETENTION.phiAccessLogYears} years</span>
           </div>
         </CardContent>
       </Card>
