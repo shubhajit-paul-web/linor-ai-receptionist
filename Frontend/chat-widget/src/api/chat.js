@@ -4,8 +4,9 @@
  *
  * Request format (POST):
  * {
- *   messages:   [{ role, content }, ...],  — full conversation history
- *   session_id: string                     — for backend session tracking
+ *   message:   string                      — current user message text
+ *   sessionId: string                      — for backend session tracking (camelCase)
+ *   history:   [{ role, content }, ...]    — prior conversation turns (excluding current)
  * }
  *
  * Expected response format (any of):
@@ -13,8 +14,7 @@
  * { message: string }
  * { content: string }
  *
- * Authorization: Bearer <apiKey> header is always sent.
- * The backend can use session_id for context retrieval / memory.
+ * Both 'x-api-key' and 'Authorization: Bearer <apiKey>' headers are sent.
  */
 
 import { fetchWithTimeout, fetchWithRetry, ApiError } from './client.js';
@@ -30,19 +30,31 @@ export async function sendMessage(messages, config) {
   const { apiKey, apiUrl, sessionId, maxRetries, requestTimeoutMs } = config;
 
   const call = async () => {
+    // Split the conversation into the current user message and prior history.
+    // The backend expects: { message: string, sessionId, history: [] }
+    const lastMessage = messages[messages.length - 1];
+    const history = messages
+      .slice(0, -1)
+      .map(({ role, content }) => ({ role, content }));
+
     const response = await fetchWithTimeout(
       apiUrl,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Send the key via both headers so the backend accepts it regardless
+          // of which header it is configured to read (x-api-key is the primary
+          // backend convention; Authorization: Bearer is the widget convention).
+          'x-api-key': apiKey,
           'Authorization': `Bearer ${apiKey}`,
           'X-Widget-Session': sessionId || '',
           'X-Widget-Version': '1.0.0',
         },
         body: JSON.stringify({
-          messages: messages.map(({ role, content }) => ({ role, content })),
-          session_id: sessionId,
+          message: lastMessage.content,
+          sessionId,
+          history,
         }),
       },
       requestTimeoutMs
