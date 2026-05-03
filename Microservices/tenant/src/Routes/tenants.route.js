@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const imagekit = require("../Services/imagekit.service");
+const logger = require("../utils/logger");
 
 const {
   getProfile,
@@ -88,12 +89,12 @@ router.get("/imagekit-auth", (req, res) => {
     const result = imagekit.getAuthenticationParameters();
     res.json({ success: true, data: result });
   } catch (error) {
-    console.error("ImageKit Auth Error:", error.message);
+    logger.error("ImageKit authentication failed", { message: error.message, error: error.toString() });
     res.status(500).json({
       success: false,
       message: "Failed to generate ImageKit authentication token",
       error: error.message,
-      details: "Verify ImageKit credentials are valid and account is active. Check console logs for details."
+      details: "Verify ImageKit credentials are valid and account is active. Check logs for details."
     });
   }
 });

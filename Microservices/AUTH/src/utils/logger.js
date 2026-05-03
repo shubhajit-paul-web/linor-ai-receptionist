@@ -1,77 +1,107 @@
 // src/utils/logger.js
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
+const util = require("util");
+const winston = require("winston");
 
-// Color codes for terminal output
 const COLORS = {
-  reset: '\x1b[0m',
-  dim: '\x1b[2m',
-  bright: '\x1b[1m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
+  reset: "\x1b[0m",
+  dim: "\x1b[2m",
+  debug: "\x1b[36m",
+  info: "\x1b[32m",
+  warn: "\x1b[33m",
+  error: "\x1b[31m",
 };
 
-// Log levels
-const LOG_LEVELS = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3,
-};
+const LOG_LEVELS = ["error", "warn", "info", "debug"];
+const level = (process.env.LOG_LEVEL || "info").toLowerCase();
+const logLevel = LOG_LEVELS.includes(level) ? level : "info";
 
-const currentLevel = LOG_LEVELS[process.env.LOG_LEVEL || 'info'];
+const logsDir = path.resolve(__dirname, "../../logs");
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
 
-const getTimestamp = () => {
-  const now = new Date();
-  return now.toISOString().split('T')[1].split('Z')[0]; // HH:mm:ss.SSS
-};
+const getTimestamp = () => new Date().toISOString().split("T")[1].split("Z")[0];
 
-const formatLog = (level, message, data = null) => {
-  const timestamp = getTimestamp();
-  const colorCode = {
-    debug: COLORS.cyan,
-    info: COLORS.green,
-    warn: COLORS.yellow,
-    error: COLORS.red,
-  }[level];
-
-  const levelLabel = level.toUpperCase().padEnd(5);
-  let output = `${COLORS.dim}[${timestamp}]${COLORS.reset} ${colorCode}${levelLabel}${COLORS.reset} ${message}`;
-
-  if (data) {
-    output += ` ${COLORS.dim}${JSON.stringify(data)}${COLORS.reset}`;
+const stringifyData = (data) => {
+  if (data === undefined || data === null) {
+    return "";
   }
 
-  return output;
+  if (data instanceof Error) {
+    return util.inspect(
+      {
+        name: data.name,
+        message: data.message,
+        stack: data.stack,
+      },
+      { depth: 5, breakLength: Infinity },
+    );
+  }
+
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return util.inspect(data, { depth: 5, breakLength: Infinity });
+  }
 };
 
-const logger = {
-  debug: (message, data = null) => {
-    if (LOG_LEVELS.debug >= currentLevel) {
-      console.log(formatLog('debug', message, data));
-    }
-  },
+const formatLine = ({ timestamp, level: entryLevel, message, data }, useColors = false) => {
+  const color = useColors ? COLORS[entryLevel] || COLORS.reset : "";
+  const dim = useColors ? COLORS.dim : "";
+  const reset = useColors ? COLORS.reset : "";
+  const levelLabel = entryLevel.toUpperCase().padEnd(5);
+  const payload = data === undefined || data === null ? "" : ` ${dim}${stringifyData(data)}${reset}`;
 
-  info: (message, data = null) => {
-    if (LOG_LEVELS.info >= currentLevel) {
-      console.log(formatLog('info', message, data));
-    }
-  },
-
-  warn: (message, data = null) => {
-    if (LOG_LEVELS.warn >= currentLevel) {
-      console.warn(formatLog('warn', message, data));
-    }
-  },
-
-  error: (message, data = null) => {
-    if (LOG_LEVELS.error >= currentLevel) {
-      console.error(formatLog('error', message, data));
-    }
-  },
+  return `${dim}[${timestamp}]${reset} ${color}${levelLabel}${reset} ${message}${payload}`;
 };
 
-module.exports = logger;
+const buildTransportFormat = (useColors = false) =>
+  winston.format.printf((info) =>
+    formatLine(
+      {
+        timestamp: info.timestamp || getTimestamp(),
+        level: info.level,
+        message: info.message,
+        data: info.data,
+      },
+      useColors,
+    ),
+  );
+
+const logger = winston.createLogger({
+  level: logLevel,
+  levels: winston.config.npm.levels,
+  format: winston.format.combine(winston.format.timestamp({ format: getTimestamp })),
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(buildTransportFormat(true)),
+    }),
+    new winston.transports.File({
+      filename: path.join(logsDir, "auth.log"),
+      format: winston.format.combine(buildTransportFormat(false)),
+    }),
+    new winston.transports.File({
+      filename: path.join(logsDir, "auth.error.log"),
+      level: "error",
+      format: winston.format.combine(buildTransportFormat(false)),
+    }),
+  ],
+  exitOnError: false,
+});
+
+const log = (entryLevel, message, data) => {
+  logger.log({
+    level: entryLevel,
+    message,
+    data,
+  });
+};
+
+module.exports = {
+  debug: (message, data = null) => log("debug", message, data),
+  info: (message, data = null) => log("info", message, data),
+  warn: (message, data = null) => log("warn", message, data),
+  error: (message, data = null) => log("error", message, data),
+};

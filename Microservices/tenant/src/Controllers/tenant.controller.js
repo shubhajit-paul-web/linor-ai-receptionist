@@ -1,5 +1,6 @@
 const Tenant = require("../model/tenant.model");
 const asyncHandler = require("../utils/asyncHandler");
+const logger = require("../utils/logger");
 const crypto = require("crypto");
 
 const generateApiKey = () => crypto.randomBytes(32).toString("hex");
@@ -27,12 +28,14 @@ exports.getProfile = asyncHandler(async (req, res) => {
   const clinic = await Tenant.findOne({ user_id });
 
   if (!clinic) {
+    logger.warn("Clinic profile not found", { userId: user_id });
     return res.status(404).json({
       success: false,
       message: "Clinic profile not found. Please complete your profile first.",
     });
   }
 
+  logger.info("Profile retrieved", { userId: user_id, clinicName: clinic.clinicName });
   res.json({ success: true, data: clinic });
 });
 
@@ -61,6 +64,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     !welcomeMsg &&
     !logoUrl
   ) {
+    logger.warn("Profile update validation failed", { userId: user_id, reason: "No fields provided" });
     return res.status(400).json({
       success: false,
       message: "Provide at least one field to update",
@@ -92,6 +96,8 @@ exports.updateProfile = asyncHandler(async (req, res) => {
       isProfileComplete: checkIsComplete(updateData),
     });
 
+    logger.info("Clinic profile created", { userId: user_id, clinicName: clinic.clinicName, isComplete: clinic.isProfileComplete });
+
     return res.status(201).json({
       success: true,
       message: clinic.isProfileComplete
@@ -112,6 +118,8 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     { returnDocument: 'after', runValidators: true },
   );
 
+  logger.info("Clinic profile updated", { userId: user_id, clinicName: clinic.clinicName, isComplete: clinic.isProfileComplete });
+
   res.json({
     success: true,
     message: clinic.isProfileComplete
@@ -125,14 +133,14 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 // POST /api/tenants/regenerate-api-key
 // ─────────────────────────────────────────
 exports.regenerateApiKey = asyncHandler(async (req, res) => {
-  console.log("req.user:", req.user); // what does token give?
+  logger.debug("Regenerating API key", { user: req.user });
   const user_id = String(req.user.id);
-  console.log("searching for user_id:", user_id);
-
+  logger.debug("Searching for clinic", { userId: user_id });
 
   const clinic = await Tenant.findOne({ user_id });
-  console.log("clinic found:", clinic);    
+  logger.debug("Clinic lookup result", { found: !!clinic, userId: user_id });    
   if (!clinic) {
+    logger.warn("Cannot regenerate API key - clinic not found", { userId: user_id });
     return res.status(404).json({
       success: false,
       message: "Clinic not found. Please complete your profile first.",
@@ -141,6 +149,8 @@ exports.regenerateApiKey = asyncHandler(async (req, res) => {
 
   const rawApiKey = generateApiKey();
   await Tenant.findOneAndUpdate({ user_id }, { apiKey: hashApiKey(rawApiKey) });
+
+  logger.info("API key regenerated", { userId: user_id, clinicName: clinic.clinicName });
 
   res.json({
     success: true,
