@@ -1,14 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
-  MOCK_FAQS,
   DEFAULT_WORKING_HOURS,
   DEFAULT_WORKING_HOURS_CONFIG,
   DEFAULT_SERVICES,
   DEFAULT_WIDGET_SETTINGS,
-  MOCK_APPOINTMENTS,
-  MOCK_CHAT_SESSIONS,
-  MOCK_ORIGINS,
 } from "../lib/mockData";
 import {
   normalizeWorkingHoursConfig,
@@ -27,21 +23,20 @@ const useClinicStore = create(
     (set, get) => ({
       // ─── Clinic Profile ───────────────────────────────────────
       clinic: {
-        name: "HealthFirst Clinic",
-        description:
-          "A modern primary care clinic serving the community since 2010.",
-        website: "https://healthfirstclinic.com",
+        name: "",
+        description: "",
+        website: "",
         logo: null,
-        address: "123 Medical Drive",
-        city: "San Francisco",
-        postalCode: "94102",
-        phone: "+1 (415) 555-0182",
-        email: "hello@healthfirstclinic.com",
-        isPro: true,
+        address: "",
+        city: "",
+        postalCode: "",
+        phone: "",
+        email: "",
+        isPro: false,
         setupSteps: {
-          clinicInfo: true,
+          clinicInfo: false,
           faqs: false,
-          workingHours: true,
+          workingHours: false,
           embedWidget: false,
         },
       },
@@ -56,16 +51,16 @@ const useClinicStore = create(
       widgetSettings: DEFAULT_WIDGET_SETTINGS,
 
       // ─── FAQs ──────────────────────────────────────────────────
-      faqs: MOCK_FAQS,
+      faqs: [],
 
-      // ─── Appointments (mock, would come from API) ────────────────
-      appointments: MOCK_APPOINTMENTS,
+      // ─── Appointments ───────────────────────────────────────────
+      appointments: [],
 
       // ─── Chat Sessions ──────────────────────────────────────────
-      chatSessions: MOCK_CHAT_SESSIONS,
+      chatSessions: [],
 
       // ─── Allowed Origins ────────────────────────────────────────
-      allowedOrigins: MOCK_ORIGINS,
+      allowedOrigins: [],
 
       // ─── Actions ────────────────────────────────────────────────
 

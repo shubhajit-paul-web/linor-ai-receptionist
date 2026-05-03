@@ -7,6 +7,7 @@ import {
   Sparkles, ShieldCheck, Zap, ChevronRight,
 } from 'lucide-react';
 import useClinicStore from '../store/useClinicStore';
+import { computeLogStats } from '../lib/chatLogsData';
 import useUIStore from '../store/useUIStore';
 import { StatCard } from '../components/shared/StatCard';
 import { StatusBadge } from '../components/shared/StatusBadge';
@@ -282,7 +283,7 @@ function SkeletonQuickActions() {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { appointments, clinic, loadProfileFromApi } = useClinicStore();
+  const { appointments, clinic, chatSessions, loadProfileFromApi } = useClinicStore();
   const welcomeDismissed = useUIStore((s) => s.welcomeDismissed);
   const dismissWelcome = useUIStore((s) => s.dismissWelcome);
 
@@ -303,19 +304,14 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, []);
 
-  // ── Derived counters ────────────────────────────────────────
+  // ── Derived counters ────────────────────────────────────────────
   const pending = appointments.filter((a) => a.status === 'Pending').length;
-  const sessions = 342;          // mock total chat sessions
-  const resolutionRate = 87;     // mock resolution %
+  const logStats = useMemo(() => computeLogStats(chatSessions), [chatSessions]);
+  const sessions = logStats.total;
+  const resolutionRate = logStats.resolution;
   const recent = useMemo(() => appointments.slice(0, 5), [appointments]);
   const setupDone = Object.values(clinic.setupSteps).filter(Boolean).length;
   const showSetup = setupDone < 4;
-
-  // Tiny mock spark series for KPI cards
-  const spark = (seed) =>
-    Array.from({ length: 12 }, (_, i) => ({
-      value: Math.round(seed * (0.7 + Math.sin(i * 0.7 + seed) * 0.15 + Math.random() * 0.2)),
-    }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -366,39 +362,31 @@ export default function Dashboard() {
             <StatCard
               label="Total appointments"
               value={appointments.length}
-              delta={{ value: 12.0, label: 'wow' }}
               icon={CalendarCheck}
               iconBg="bg-primary-light"
               iconColor="text-primary"
-              sparkline={spark(appointments.length || 30)}
             />
             <StatCard
               label="Pending confirmations"
               value={pending}
-              delta={pending ? { value: -3.4, label: 'wow' } : undefined}
               icon={Clock}
               iconBg="bg-warning-light"
               iconColor="text-warning"
-              sparkline={spark(pending || 5)}
             />
             <StatCard
               label="Chat sessions"
               value={sessions}
-              delta={{ value: 8.2, label: 'wow' }}
               icon={MessageSquare}
               iconBg="bg-info-light"
               iconColor="text-info"
-              sparkline={spark(sessions / 10)}
             />
             <StatCard
               label="AI resolution rate"
               value={resolutionRate}
               suffix="%"
-              delta={{ value: 2.0, label: 'wow' }}
               icon={ShieldCheck}
               iconBg="bg-success-light"
               iconColor="text-success"
-              sparkline={spark(resolutionRate)}
             />
           </div>
         )}

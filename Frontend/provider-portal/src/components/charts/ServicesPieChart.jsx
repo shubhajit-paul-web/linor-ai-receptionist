@@ -20,6 +20,15 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function ServicesPieChart() {
+  if (PIE_DATA.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[120px] gap-1.5 text-center">
+        <p className="text-[12px] font-medium text-text-secondary">No service data yet</p>
+        <p className="text-[11px] text-text-muted">Appointment distribution will appear here.</p>
+      </div>
+    );
+  }
+
   const total = PIE_DATA.reduce((s, d) => s + d.value, 0);
   // Pull palette colors from tokens so they recolor with theme.
   const sliced = PIE_DATA.map((d, i) => ({ ...d, color: CHART_COLORS[i % CHART_COLORS.length] }));
