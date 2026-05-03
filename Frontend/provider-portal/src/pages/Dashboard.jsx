@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -154,6 +154,131 @@ const QUICK_ACTIONS = [
   { label: 'Get embed code',  icon: Code2,         path: '/embed', desc: 'Install widget on site' },
 ];
 
+// ─── Skeleton Components ─────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={cn('skeleton rounded-lg', className)} />;
+}
+
+function SkeletonSetupChecklist() {
+  return (
+    <div className="flex flex-col bg-surface border border-border rounded-xl p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center gap-2 mb-2">
+            <SkeletonBlock className="w-7 h-7 rounded-md" />
+            <SkeletonBlock className="h-4 w-52" />
+          </div>
+          <SkeletonBlock className="h-3 w-80" />
+          <div className="flex items-center gap-3 mt-4">
+            <SkeletonBlock className="h-1.5 flex-1 max-w-md" />
+            <SkeletonBlock className="h-3 w-8" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5 w-full md:w-[280px]">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonBlock key={i} className="h-9 w-full rounded-md" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonKPICards() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex flex-col gap-3 p-4 rounded-xl border border-border bg-surface">
+          <div className="flex items-start justify-between gap-2">
+            <SkeletonBlock className="h-2.5 w-20" />
+            <SkeletonBlock className="h-7 w-7 rounded-md" />
+          </div>
+          <div className="flex items-end justify-between gap-3">
+            <div className="space-y-1.5">
+              <SkeletonBlock className="h-6 w-14" />
+              <SkeletonBlock className="h-2.5 w-24" />
+            </div>
+            <SkeletonBlock className="h-8 w-20 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonChartCard({ className, chartHeight = 260 }) {
+  return (
+    <div className={cn('flex flex-col bg-surface border border-border rounded-xl overflow-hidden', className)}>
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border">
+        <div className="space-y-1.5">
+          <SkeletonBlock className="h-3.5 w-36" />
+          <SkeletonBlock className="h-2.5 w-44" />
+        </div>
+      </div>
+      <div className="p-5 pt-3">
+        <div className="skeleton rounded-lg w-full" style={{ height: chartHeight }} />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonRecentTable() {
+  return (
+    <div className="flex flex-col bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border">
+        <div className="space-y-1.5">
+          <SkeletonBlock className="h-3.5 w-20" />
+          <SkeletonBlock className="h-2.5 w-44" />
+        </div>
+        <SkeletonBlock className="h-4 w-16" />
+      </div>
+      <div className="overflow-x-auto">
+        <table className="data-table w-full">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th className="w-10" />
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <tr key={i}>
+                {[140, 100, 80, 56, 64, 32].map((w, j) => (
+                  <td key={j}>
+                    <div className="skeleton h-3.5 rounded" style={{ width: w }} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonQuickActions() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface">
+          <SkeletonBlock className="w-9 h-9 rounded-lg flex-shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <SkeletonBlock className="h-3.5 w-24" />
+            <SkeletonBlock className="h-2.5 w-32" />
+          </div>
+          <SkeletonBlock className="w-4 h-4 rounded" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -169,6 +294,14 @@ export default function Dashboard() {
       console.error('Failed to load clinic profile:', err);
     });
   }, [loadProfileFromApi]);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate async data fetch — resolves after 1.3 s
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 1300);
+    return () => clearTimeout(t);
+  }, []);
 
   // ── Derived counters ────────────────────────────────────────
   const pending = appointments.filter((a) => a.status === 'Pending').length;
@@ -215,106 +348,131 @@ export default function Dashboard() {
       />
 
       {/* ── Setup checklist (conditional) ─────────────────────── */}
-      {showSetup && <SetupChecklist clinic={clinic} />}
+      {isLoading ? (
+        <SkeletonSetupChecklist />
+      ) : (
+        showSetup && <SetupChecklist clinic={clinic} />
+      )}
 
       {/* ── KPI row ───────────────────────────────────────────── */}
       <Section
         title="Key metrics"
         description="Last 30 days vs prior period"
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <StatCard
-            label="Total appointments"
-            value={appointments.length}
-            delta={{ value: 12.0, label: 'wow' }}
-            icon={CalendarCheck}
-            iconBg="bg-primary-light"
-            iconColor="text-primary"
-            sparkline={spark(appointments.length || 30)}
-          />
-          <StatCard
-            label="Pending confirmations"
-            value={pending}
-            delta={pending ? { value: -3.4, label: 'wow' } : undefined}
-            icon={Clock}
-            iconBg="bg-warning-light"
-            iconColor="text-warning"
-            sparkline={spark(pending || 5)}
-          />
-          <StatCard
-            label="Chat sessions"
-            value={sessions}
-            delta={{ value: 8.2, label: 'wow' }}
-            icon={MessageSquare}
-            iconBg="bg-info-light"
-            iconColor="text-info"
-            sparkline={spark(sessions / 10)}
-          />
-          <StatCard
-            label="AI resolution rate"
-            value={resolutionRate}
-            suffix="%"
-            delta={{ value: 2.0, label: 'wow' }}
-            icon={ShieldCheck}
-            iconBg="bg-success-light"
-            iconColor="text-success"
-            sparkline={spark(resolutionRate)}
-          />
-        </div>
+        {isLoading ? (
+          <SkeletonKPICards />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <StatCard
+              label="Total appointments"
+              value={appointments.length}
+              delta={{ value: 12.0, label: 'wow' }}
+              icon={CalendarCheck}
+              iconBg="bg-primary-light"
+              iconColor="text-primary"
+              sparkline={spark(appointments.length || 30)}
+            />
+            <StatCard
+              label="Pending confirmations"
+              value={pending}
+              delta={pending ? { value: -3.4, label: 'wow' } : undefined}
+              icon={Clock}
+              iconBg="bg-warning-light"
+              iconColor="text-warning"
+              sparkline={spark(pending || 5)}
+            />
+            <StatCard
+              label="Chat sessions"
+              value={sessions}
+              delta={{ value: 8.2, label: 'wow' }}
+              icon={MessageSquare}
+              iconBg="bg-info-light"
+              iconColor="text-info"
+              sparkline={spark(sessions / 10)}
+            />
+            <StatCard
+              label="AI resolution rate"
+              value={resolutionRate}
+              suffix="%"
+              delta={{ value: 2.0, label: 'wow' }}
+              icon={ShieldCheck}
+              iconBg="bg-success-light"
+              iconColor="text-success"
+              sparkline={spark(resolutionRate)}
+            />
+          </div>
+        )}
       </Section>
 
       {/* ── Trends + service breakdown ────────────────────────── */}
       <Section title="Trends">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
-          <Card
-            className="lg:col-span-3"
-            title="Appointments over time"
-            description="Bookings created via AI"
-            contentClassName="p-5 pt-3"
-          >
-            <div className="h-[260px]">
-              <AppointmentsAreaChart />
-            </div>
-          </Card>
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+            <SkeletonChartCard className="lg:col-span-3" chartHeight={260} />
+            <SkeletonChartCard className="lg:col-span-2" chartHeight={260} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+            <Card
+              className="lg:col-span-3"
+              title="Appointments over time"
+              description="Bookings created via AI"
+              contentClassName="p-5 pt-3"
+            >
+              <div className="h-[260px]">
+                <AppointmentsAreaChart />
+              </div>
+            </Card>
 
-          <Card
-            className="lg:col-span-2"
-            title="Appointments by service"
-            description="Distribution across categories"
-            contentClassName="p-5 pt-3"
-          >
-            <div className="h-[260px]">
-              <ServicesPieChart />
-            </div>
-          </Card>
-        </div>
+            <Card
+              className="lg:col-span-2"
+              title="Appointments by service"
+              description="Distribution across categories"
+              contentClassName="p-5 pt-3"
+            >
+              <div className="h-[260px]">
+                <ServicesPieChart />
+              </div>
+            </Card>
+          </div>
+        )}
       </Section>
 
       {/* ── Resolution + heatmap ──────────────────────────────── */}
       <Section title="Quality & coverage">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <Card
-            title="AI resolution rate"
-            description="% of conversations resolved without handoff"
-            contentClassName="p-5 pt-3"
-          >
-            <div className="h-[220px]">
-              <ResolutionLineChart />
-            </div>
-          </Card>
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <SkeletonChartCard chartHeight={220} />
+            <SkeletonChartCard chartHeight={220} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <Card
+              title="AI resolution rate"
+              description="% of conversations resolved without handoff"
+              contentClassName="p-5 pt-3"
+            >
+              <div className="h-[220px]">
+                <ResolutionLineChart />
+              </div>
+            </Card>
 
-          <Card
-            title="Patient activity by hour"
-            description="Demand heatmap, last 7 days"
-            contentClassName="p-5"
-          >
-            <HourHeatmap />
-          </Card>
-        </div>
+            <Card
+              title="Patient activity by hour"
+              description="Demand heatmap, last 7 days"
+              contentClassName="p-5"
+            >
+              <HourHeatmap />
+            </Card>
+          </div>
+        )}
       </Section>
 
       {/* ── Recent appointments ───────────────────────────────── */}
       <Section title="Recent appointments">
+        {isLoading ? (
+          <SkeletonRecentTable />
+        ) : (
         <Card
           action={
             <Link
@@ -372,39 +530,44 @@ export default function Dashboard() {
             </table>
           </div>
         </Card>
+        )}
       </Section>
 
       {/* ── Quick actions ─────────────────────────────────────── */}
       <Section title="Jump back in">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {QUICK_ACTIONS.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link
-                key={action.path}
-                to={action.path}
-                className={cn(
-                  'group flex items-center gap-3 p-4 rounded-xl border border-border bg-surface',
-                  'hover:border-primary/40 hover:bg-surface-secondary transition-colors',
-                )}
-              >
-                <span className="w-9 h-9 rounded-lg bg-surface-secondary border border-border grid place-items-center text-text-muted group-hover:text-primary group-hover:bg-primary-light group-hover:border-primary/30 transition-colors">
-                  <Icon size={16} />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-[13.5px] text-text-primary truncate">
-                    {action.label}
+        {isLoading ? (
+          <SkeletonQuickActions />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {QUICK_ACTIONS.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.path}
+                  to={action.path}
+                  className={cn(
+                    'group flex items-center gap-3 p-4 rounded-xl border border-border bg-surface',
+                    'hover:border-primary/40 hover:bg-surface-secondary transition-colors',
+                  )}
+                >
+                  <span className="w-9 h-9 rounded-lg bg-surface-secondary border border-border grid place-items-center text-text-muted group-hover:text-primary group-hover:bg-primary-light group-hover:border-primary/30 transition-colors">
+                    <Icon size={16} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[13.5px] text-text-primary truncate">
+                      {action.label}
+                    </div>
+                    <div className="text-[11.5px] text-text-muted truncate">{action.desc}</div>
                   </div>
-                  <div className="text-[11.5px] text-text-muted truncate">{action.desc}</div>
-                </div>
-                <ArrowRight
-                  size={14}
-                  className="text-text-muted opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all"
-                />
-              </Link>
-            );
-          })}
-        </div>
+                  <ArrowRight
+                    size={14}
+                    className="text-text-muted opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all"
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </Section>
 
       {/* ── Trust footer ──────────────────────────────────────── */}
