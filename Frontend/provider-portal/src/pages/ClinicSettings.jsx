@@ -40,6 +40,138 @@ import useAuthStore from "../store/useAuthStore";
 import { IKContext, IKUpload } from "imagekitio-react";
 import { tenantApi } from "../lib/api"; // Ensure this is imported for the authenticator
 
+// ─── Skeleton Components ──────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={cn("skeleton rounded-lg", className)} />;
+}
+
+function SkeletonGeneralInfo() {
+  return (
+    <div className="bg-surface border border-border rounded-md p-6 space-y-5">
+      <SkeletonBlock className="h-5 w-32" />
+      <div>
+        <SkeletonBlock className="h-2.5 w-20 mb-2" />
+        <div className="flex items-center gap-4">
+          <SkeletonBlock className="w-16 h-16 rounded-md" />
+          <div className="space-y-2">
+            <SkeletonBlock className="h-3.5 w-24" />
+            <SkeletonBlock className="h-2.5 w-40" />
+          </div>
+        </div>
+      </div>
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className="space-y-1.5">
+          <SkeletonBlock className="h-2.5 w-24" />
+          <SkeletonBlock className="h-10 w-full" />
+        </div>
+      ))}
+      <div className="space-y-1.5">
+        <SkeletonBlock className="h-2.5 w-28" />
+        <SkeletonBlock className="h-24 w-full" />
+      </div>
+      <div className="flex justify-end">
+        <SkeletonBlock className="h-9 w-28" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonWorkingHours() {
+  return (
+    <div className="bg-surface border border-border rounded-md p-6 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="space-y-2">
+          <SkeletonBlock className="h-5 w-36" />
+          <SkeletonBlock className="h-2.5 w-64" />
+        </div>
+        <SkeletonBlock className="h-8 w-28" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="border border-border rounded-md p-4 bg-surface-secondary space-y-2">
+            <SkeletonBlock className="h-2.5 w-16" />
+            <SkeletonBlock className="h-4 w-24" />
+          </div>
+        ))}
+      </div>
+      <SkeletonBlock className="h-9 w-48" />
+    </div>
+  );
+}
+
+function SkeletonServices() {
+  return (
+    <div className="bg-surface border border-border rounded-md p-6 space-y-4">
+      <div className="space-y-2">
+        <SkeletonBlock className="h-5 w-24" />
+        <SkeletonBlock className="h-2.5 w-72" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <SkeletonBlock key={i} className="h-8 w-24 rounded-md" />
+        ))}
+      </div>
+      <div className="space-y-1.5">
+        <SkeletonBlock className="h-2.5 w-28" />
+        <div className="flex gap-2">
+          <SkeletonBlock className="h-9 flex-1" />
+          <SkeletonBlock className="h-9 w-28" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonContactLocation() {
+  return (
+    <div className="bg-surface border border-border rounded-md p-6 space-y-4">
+      <SkeletonBlock className="h-5 w-40" />
+      <div className="grid grid-cols-2 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-1.5">
+            <SkeletonBlock className="h-2.5 w-24" />
+            <SkeletonBlock className="h-10 w-full" />
+          </div>
+        ))}
+        <div className="col-span-2 space-y-1.5">
+          <SkeletonBlock className="h-2.5 w-24" />
+          <SkeletonBlock className="h-10 w-full" />
+        </div>
+      </div>
+      <div className="flex justify-end pt-2">
+        <SkeletonBlock className="h-9 w-32" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonDangerZone() {
+  return (
+    <div className="border-2 border-danger/30 rounded-md p-6 space-y-4 bg-danger-light/30">
+      <div className="flex items-center gap-2 mb-2">
+        <SkeletonBlock className="h-[18px] w-[18px] rounded-full" />
+        <SkeletonBlock className="h-5 w-28" />
+      </div>
+      <SkeletonBlock className="h-3.5 w-72" />
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className="flex items-center justify-between p-4 bg-surface border border-danger/20 rounded-md">
+          <div className="space-y-1.5">
+            <SkeletonBlock className="h-3.5 w-32" />
+            <SkeletonBlock className="h-2.5 w-48" />
+          </div>
+          <SkeletonBlock className="h-9 w-28" />
+        </div>
+      ))}
+      <div className="p-4 bg-surface border border-border rounded-md space-y-3">
+        <SkeletonBlock className="h-3.5 w-32" />
+        <SkeletonBlock className="h-2.5 w-64" />
+        <SkeletonBlock className="h-8 w-28" />
+      </div>
+    </div>
+  );
+}
+
 const LEFT_NAV = [
   "General Info",
   "Working Hours",
@@ -118,6 +250,7 @@ export default function ClinicSettings() {
   const [logoPreview, setLogoPreview] = useState(clinic.logo || null);
   // 2. Add a loading state just for the image upload
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setLogoPreview(clinic.logo || null);
@@ -133,6 +266,8 @@ export default function ClinicSettings() {
         await loadProfileFromApi();
       } catch (error) {
         console.error("Failed to load clinic profile:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadProfile();
@@ -343,8 +478,18 @@ export default function ClinicSettings() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              {/* General Info */}
-              {section === "General Info" && (
+              {isLoading ? (
+                <>
+                  {section === "General Info" && <SkeletonGeneralInfo />}
+                  {section === "Working Hours" && <SkeletonWorkingHours />}
+                  {section === "Services" && <SkeletonServices />}
+                  {section === "Contact & Location" && <SkeletonContactLocation />}
+                  {section === "Danger Zone" && <SkeletonDangerZone />}
+                </>
+              ) : (
+                <>
+                  {/* General Info */}
+                  {section === "General Info" && (
                 <form
                   onSubmit={generalForm.handleSubmit(saveGeneral)}
                   className="bg-surface border border-border rounded-md p-6 space-y-5"
@@ -810,6 +955,8 @@ export default function ClinicSettings() {
                   </div>
                 </div>
               )}
+            </>
+          )}
             </motion.div>
           </AnimatePresence>
         </div>
