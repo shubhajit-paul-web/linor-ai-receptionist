@@ -48,7 +48,7 @@ function StepDots({ step }) {
         <div key={n} className="flex items-center gap-2">
           <div className={cn(
             'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-all duration-200',
-            step > n ? 'bg-primary border-primary text-white'
+            step > n ? 'bg-primary border-primary text-primary-on'
               : step === n ? 'border-primary text-primary'
                 : 'border-border text-text-muted'
           )}>
@@ -175,7 +175,7 @@ export default function Register() {
                   registration={step1Form.register('email')}
                   error={step1Form.formState.errors.email?.message} />
                 <button type="submit" disabled={loading}
-                  className="w-full h-10 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70">
+                  className="w-full h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70">
                   {loading ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : 'Continue →'}
                 </button>
               </motion.form>
@@ -205,7 +205,7 @@ export default function Register() {
                     Back
                   </button>
                   <button type="submit" disabled={loading}
-                    className="flex-1 h-10 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70">
+                    className="flex-1 h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70">
                     {loading ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : 'Create Account'}
                   </button>
                 </div>
@@ -241,7 +241,7 @@ export default function Register() {
                 <p className="text-xs text-text-muted mb-6">You can always find this in API & Security settings.</p>
 
                 <button onClick={() => navigate('/dashboard')}
-                  className="w-full h-10 rounded-md text-sm font-semibold text-white bg-primary hover:bg-primary-hover transition-colors">
+                  className="w-full h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors">
                   Go to Dashboard →
                 </button>
               </motion.div>

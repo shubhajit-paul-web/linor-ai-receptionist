@@ -196,6 +196,10 @@
    Utility Classes
 ────────────────────────────────────────────────────────────── */
 @layer utilities {
+  .text-primary-on {
+    color: var(--primary-on);
+  }
+
   /* Skeleton shimmer effect */
   .skeleton {
     background: linear-gradient(

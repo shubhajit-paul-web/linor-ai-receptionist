@@ -94,7 +94,7 @@ function ChatBubble({ role, text, time }) {
           <div className={cn(
             'px-4 py-3 text-[14px] leading-relaxed shadow-sm transition-all',
             isUser
-              ? 'bg-primary text-white rounded-2xl rounded-tr-sm'
+              ? 'bg-primary text-primary-on rounded-2xl rounded-tr-sm'
               : 'bg-surface border border-border text-text-primary rounded-2xl rounded-tl-sm'
           )}>
             {text}
