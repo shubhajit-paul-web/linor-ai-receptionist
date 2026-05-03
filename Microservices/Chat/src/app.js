@@ -12,10 +12,32 @@ const logger = require("./utils/logger");
 const app = express();
 
 // ── Security headers ───────────────────────────────────────
-app.use(helmet());
+// crossOriginResourcePolicy must be 'cross-origin' (not the default
+// 'same-origin') because the widget is embedded on external hospital
+// websites and browsers will otherwise block the fetch response.
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 
 // ── CORS — chat widget can be on any hospital website ──────
-app.use(cors({ origin: "*" }));
+// Explicitly list every header the widget sends so the OPTIONS
+// preflight never fails with an "invalid request header" rejection.
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-api-key",
+      "X-Widget-Session",
+      "X-Widget-Version",
+    ],
+    optionsSuccessStatus: 204,
+  }),
+);
 
 // ── Cookie parser ──────────────────────────────────────────
 app.use(cookieParser());

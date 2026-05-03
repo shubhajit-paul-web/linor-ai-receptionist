@@ -6,7 +6,17 @@ const CACHE_TTL = 60 * 5; // cache clinic data for 5 minutes
 const cacheKey  = (apiKey) => `clinic:${apiKey}`;
 
 exports.verifyApiKey = asyncHandler(async (req, res, next) => {
-  const apiKey = req.headers["x-api-key"];
+  // Accept the key from either 'x-api-key' or 'Authorization: Bearer <key>'
+  // so that both the chat widget (which sends Authorization) and direct API
+  // callers (which send x-api-key) work without any changes to either side.
+  let apiKey = req.headers["x-api-key"];
+
+  if (!apiKey) {
+    const authHeader = req.headers["authorization"] ?? "";
+    if (authHeader.startsWith("Bearer ")) {
+      apiKey = authHeader.slice(7).trim();
+    }
+  }
 
   if (!apiKey) {
     return res.status(401).json({ success: false, message: "API key missing" });
