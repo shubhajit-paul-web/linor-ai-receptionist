@@ -14,14 +14,16 @@ const HOST_ID = 'ai-receptionist-widget-host';
 
 /**
  * Initialize and mount the chatbot widget.
- * Safe to call multiple times — idempotent.
+ * Safe to call multiple times — idempotent (returns existing public API on re-call).
+ *
  * @param {object} config — parsed configuration from config.js
+ * @returns {{ open, close, toggle, destroy, on, off, getState } | null}
  */
 export function initWidget(config) {
-  // Guard: prevent double-initialization
+  // Guard: prevent double-initialization — return existing instance if present
   if (document.getElementById(HOST_ID)) {
-    console.warn('[AI Widget] Already initialized. Skipping.');
-    return;
+    console.warn('[AI Widget] Already initialized. Call window.LinorWidget.destroy() first to re-mount.');
+    return typeof window !== 'undefined' ? window.LinorWidget || null : null;
   }
 
   // Create the host element that will contain the Shadow DOM
@@ -46,6 +48,18 @@ export function initWidget(config) {
   // Mount to body — safely, after the current script finishes
   document.body.appendChild(host);
 
-  // Hand off to the Widget root component
-  createWidget(shadow, config);
+  // Hand off to the Widget root component; get back the public API
+  const api = createWidget(shadow, config);
+
+  // Wrap destroy to also physically remove the host element from the DOM
+  const innerDestroy = api.destroy;
+  api.destroy = () => {
+    innerDestroy();
+    host.remove();
+    if (typeof window !== 'undefined' && window.LinorWidget === api) {
+      delete window.LinorWidget;
+    }
+  };
+
+  return api;
 }

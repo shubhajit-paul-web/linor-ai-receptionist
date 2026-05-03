@@ -98,17 +98,30 @@
     </div>
 
     <div class="demo-card">
-      <h2>Embed on any website</h2>
+      <h2>Embed on any website — one script tag</h2>
       <div class="code-block">
         <code>&lt;script
-  <span class="attr">src</span>=<span class="val">"https://cdn.example.com/widget.js"</span>
+  <span class="attr">src</span>=<span class="val">"https://cdn.linor.ai/widget.js"</span>
   <span class="attr">data-api-key</span>=<span class="val">"sk-your-key"</span>
-  <span class="attr">data-api-url</span>=<span class="val">"https://api.yourbackend.com/chat"</span>
+  <span class="attr">data-api-url</span>=<span class="val">"https://api.linor.ai/v1/chat"</span>
   <span class="attr">data-bot-name</span>=<span class="val">"Aria"</span>
   <span class="attr">data-primary-color</span>=<span class="val">"#6366f1"</span>
-  <span class="attr">data-welcome-message</span>=<span class="val">"Hi! How can I help?"</span>
+  <span class="attr">data-position</span>=<span class="val">"bottom-right"</span>
+  <span class="attr">data-offset-x</span>=<span class="val">"24"</span>
+  <span class="attr">data-offset-y</span>=<span class="val">"24"</span>
   <span class="attr">async</span>
 &gt;&lt;/script&gt;</code>
+      </div>
+    </div>
+
+    <div class="demo-card">
+      <h2>Programmatic control (after script loads)</h2>
+      <div class="code-block">
+        <code><span class="attr">window.LinorWidget</span>.open();
+<span class="attr">window.LinorWidget</span>.close();
+<span class="attr">window.LinorWidget</span>.toggle();
+<span class="attr">window.LinorWidget</span>.destroy();
+<span class="attr">window.LinorWidget</span>.on(<span class="val">'send'</span>, (text) =&gt; console.log(text));</code>
       </div>
     </div>
 
@@ -116,13 +129,17 @@
       <h2>Features</h2>
       <div class="feature-grid">
         <div class="feature-item">Shadow DOM isolation — zero CSS leakage</div>
-        <div class="feature-item">Configurable via script tag attributes</div>
+        <div class="feature-item">4 positions: bottom/top × left/right</div>
+        <div class="feature-item">window.LinorConfig + data-* attributes</div>
+        <div class="feature-item">window.LinorWidget public JS API</div>
         <div class="feature-item">Session persistence (localStorage)</div>
         <div class="feature-item">Retry logic with exponential backoff</div>
         <div class="feature-item">Full keyboard navigation + ARIA</div>
         <div class="feature-item">Mobile-first responsive design</div>
         <div class="feature-item">Typing indicator & loading states</div>
         <div class="feature-item">Error states with per-message retry</div>
+        <div class="feature-item">Configurable size, offset, z-index</div>
+        <div class="feature-item">Optional attribution hide</div>
       </div>
     </div>
 
@@ -160,13 +177,18 @@
         return _originalFetch(url, opts);
       };
 
-      window.__AI_WIDGET_CONFIG__ = {
-        apiKey: 'demo-key-12345',
-        apiUrl: 'https://demo-api.example.com/chat',
-        botName: 'Aria',
-        primaryColor: '#6366f1',
+      // window.LinorConfig is the preferred programmatic config pattern
+      // (matches what the provider portal embed snippets generate)
+      window.LinorConfig = {
+        apiKey:         'demo-key-12345',
+        apiUrl:         'https://demo-api.example.com/chat',
+        botName:        'Aria',
+        primaryColor:   '#6366f1',
         welcomeMessage: 'Hi! 👋 I\'m Aria, your AI assistant. How can I help you today?',
-        position: 'bottom-right',
+        position:       'bottom-right',
+        offsetX:        24,
+        offsetY:        24,
+        hideAttribution: false,
       };
     </script>
 

@@ -33,7 +33,17 @@ function bootstrap() {
     return;
   }
 
-  initWidget(config);
+  const api = initWidget(config);
+
+  // Expose public API on window so integrators can call:
+  //   window.LinorWidget.open()
+  //   window.LinorWidget.close()
+  //   window.LinorWidget.toggle()
+  //   window.LinorWidget.destroy()
+  //   window.LinorWidget.on('open' | 'close' | 'send', fn)
+  if (api && typeof window !== 'undefined') {
+    window.LinorWidget = api;
+  }
 }
 
 // Handle both "script at end of body" and "async" script cases

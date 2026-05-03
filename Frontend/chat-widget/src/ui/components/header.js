@@ -67,9 +67,8 @@ export function createHeader(bus, config) {
     html: ICON_CHEVRON_DOWN,
   });
 
-  closeBtn.addEventListener('click', () => {
-    bus.emit('close');
-  });
+  const handleClose = () => bus.emit('close');
+  closeBtn.addEventListener('click', handleClose);
 
   const actionsEl = h('div', { class: 'header__actions' }, closeBtn);
 
@@ -80,7 +79,7 @@ export function createHeader(bus, config) {
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   function destroy() {
-    closeBtn.removeEventListener('click', () => bus.emit('close'));
+    closeBtn.removeEventListener('click', handleClose);
   }
 
   return { el, destroy };
