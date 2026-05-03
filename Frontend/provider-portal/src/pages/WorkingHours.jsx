@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock3,
@@ -59,6 +59,63 @@ function reasonLabel(reason) {
   return "Closed now";
 }
 
+// ─── Skeleton Components ──────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={cn("skeleton rounded-lg", className)} />;
+}
+
+function SkeletonTabBar() {
+  return (
+    <div className="flex overflow-x-auto p-2 gap-1 border-b border-border">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <SkeletonBlock key={i} className="h-8 w-28 flex-shrink-0 rounded-md" />
+      ))}
+    </div>
+  );
+}
+
+function SkeletonDayCards() {
+  return (
+    <div className="space-y-4">
+      <SkeletonBlock className="h-12 w-full rounded-md" />
+      {Array.from({ length: 7 }).map((_, i) => (
+        <div key={i} className="border border-border rounded-md p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1.5">
+              <SkeletonBlock className="h-5 w-24" />
+              <SkeletonBlock className="h-3 w-16" />
+            </div>
+            <SkeletonBlock className="h-6 w-10 rounded-full" />
+          </div>
+          <SkeletonBlock className="h-9 w-56" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonPreviewPanel() {
+  return (
+    <div className="bg-surface border border-border rounded-md p-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <SkeletonBlock className="h-5 w-5 rounded-full" />
+        <SkeletonBlock className="h-5 w-40" />
+      </div>
+      <div className="space-y-1.5">
+        <SkeletonBlock className="h-3 w-32" />
+        <SkeletonBlock className="h-9 w-full" />
+      </div>
+      <SkeletonBlock className="h-28 w-full rounded-md" />
+      <div className="space-y-2">
+        <SkeletonBlock className="h-3 w-full" />
+        <SkeletonBlock className="h-3 w-3/4" />
+        <SkeletonBlock className="h-3 w-1/2" />
+      </div>
+    </div>
+  );
+}
+
 export default function WorkingHours() {
   const {
     clinic,
@@ -79,6 +136,7 @@ export default function WorkingHours() {
   const [saving, setSaving] = useState(false);
   const [copyFrom, setCopyFrom] = useState("Monday");
   const [copyTo, setCopyTo] = useState("Tuesday");
+  const [isLoading, setIsLoading] = useState(true);
 
   const validation = useMemo(() => validateWorkingHoursConfig(draft), [draft]);
   const coverage = useMemo(() => summarizeCoverage(draft), [draft]);
@@ -280,6 +338,11 @@ export default function WorkingHours() {
     toast.info("Changes discarded.");
   };
 
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 1300);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="max-w-[1400px] space-y-6 pb-24">
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -339,7 +402,15 @@ export default function WorkingHours() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6">
         <div className="min-w-0">
-          <div className="bg-surface border border-border rounded-md">
+          {isLoading ? (
+            <div className="bg-surface border border-border rounded-md">
+              <SkeletonTabBar />
+              <div className="p-5">
+                <SkeletonDayCards />
+              </div>
+            </div>
+          ) : (
+            <div className="bg-surface border border-border rounded-md">
             <div className="flex overflow-x-auto p-2 gap-1 border-b border-border">
               {SECTIONS.map((section) => (
                 <button
@@ -755,10 +826,14 @@ export default function WorkingHours() {
               </AnimatePresence>
             </div>
           </div>
+          )}
         </div>
 
         <aside className="space-y-4">
-          <div className="bg-surface border border-border rounded-md p-4">
+          {isLoading ? (
+            <SkeletonPreviewPanel />
+          ) : (
+            <div className="bg-surface border border-border rounded-md p-4">
             <div className="flex items-center gap-2 mb-3">
               <Eye size={16} className="text-primary" />
               <h3 className="text-sm font-semibold text-text-primary">
@@ -819,6 +894,7 @@ export default function WorkingHours() {
               </p>
             </div>
           </div>
+          )}
         </aside>
       </div>
 

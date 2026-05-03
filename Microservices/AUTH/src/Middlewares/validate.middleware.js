@@ -1,7 +1,8 @@
 // src/middleware/validate.middleware.js
 const ApiError = require('../utils/ApiError.js')
+const asyncHandler = require('../utils/asyncHandler.js')
 
-exports.validateSignup = (req, res, next) => {
+exports.validateSignup = asyncHandler((req, res, next) => {
   const { docName, email, password } = req.body
 
   const errors = []
@@ -23,9 +24,9 @@ exports.validateSignup = (req, res, next) => {
   }
 
   next()
-}
+})
 
-exports.validateLogin = (req, res, next) => {
+exports.validateLogin = asyncHandler((req, res, next) => {
   const { email, password } = req.body
 
   if (!email || !password) {
@@ -33,4 +34,4 @@ exports.validateLogin = (req, res, next) => {
   }
 
   next()
-}
+})
