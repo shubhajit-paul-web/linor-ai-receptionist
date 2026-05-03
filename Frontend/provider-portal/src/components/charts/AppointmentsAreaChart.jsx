@@ -27,7 +27,16 @@ function CustomTooltip({ active, payload, label }) {
 
 export function AppointmentsAreaChart() {
   const [activeTab, setActiveTab] = useState(1); // default: 30 days
-  const data = useMemo(() => generateAreaChartData(TABS[activeTab].days), [activeTab]);
+  const data = useMemo(() => generateAreaChartData(), [activeTab]);
+
+  if (data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[120px] gap-1.5 text-center">
+        <p className="text-[12px] font-medium text-text-secondary">No appointment data yet</p>
+        <p className="text-[11px] text-text-muted">Booking trends will appear here once the AI starts scheduling.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col gap-3">

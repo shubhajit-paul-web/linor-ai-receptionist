@@ -254,16 +254,41 @@ const useClinicStore = create(
     }),
     {
       name: "linor-clinic",
-      version: 2,
-      migrate: (persistedState) => {
+      version: 3,
+      migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== "object")
           return persistedState;
-        return {
+        const state = {
           ...persistedState,
           workingHours: normalizeWorkingHoursConfig(
             persistedState.workingHours,
           ),
         };
+        if (version < 3) {
+          state.faqs = [];
+          state.appointments = [];
+          state.chatSessions = [];
+          state.allowedOrigins = [];
+          state.clinic = {
+            ...state.clinic,
+            name: state.clinic?.name || "",
+            description: state.clinic?.description || "",
+            website: state.clinic?.website || "",
+            address: state.clinic?.address || "",
+            city: state.clinic?.city || "",
+            postalCode: state.clinic?.postalCode || "",
+            phone: state.clinic?.phone || "",
+            email: state.clinic?.email || "",
+            isPro: false,
+            setupSteps: {
+              clinicInfo: false,
+              faqs: false,
+              workingHours: false,
+              embedWidget: false,
+            },
+          };
+        }
+        return state;
       },
     },
   ),
