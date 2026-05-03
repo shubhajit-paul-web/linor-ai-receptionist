@@ -2,6 +2,9 @@ require("dotenv").config();
 
 const app = require("./src/app");
 const redis = require("./src/service/redisClient");
+const { setupVoiceSockets } = require("./src/service/voiceSocket");
+const http = require("http");
+const { Server } = require("socket.io");
 
 // ── Validate critical env vars ─────────────────────────────
 const REQUIRED_ENVS = [
@@ -19,13 +22,24 @@ REQUIRED_ENVS.forEach((key) => {
   }
 });
 
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Restrict this to your frontend URL in production
+    methods: ["GET", "POST"],
+  },
+});
+
+setupVoiceSockets(io);
+
 // ── Start server ───────────────────────────────────────────
 const PORT = process.env.PORT || 5004;
-const server = app.listen(PORT, () => {
-  console.log(
-    `Chat Service running in ${process.env.NODE_ENV} mode on port ${PORT}`,
-  );
-});
+// const server = app.listen(PORT, () => {
+//   console.log(
+//     `Chat Service running in ${process.env.NODE_ENV} mode on port ${PORT}`,
+//   );
+// });
 
 // ── Graceful shutdown — close Redis + server cleanly ───────
 const shutdown = async (signal) => {
