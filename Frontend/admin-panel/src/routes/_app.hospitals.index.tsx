@@ -14,9 +14,11 @@ import { StatusDot, type StatusTone } from '@/components/ui/status-dot';
 import { EmptyState } from '@/components/feedback/empty-state';
 import { formatCompact, formatCurrency, formatPercent } from '@/lib/utils';
 import type { Hospital, HospitalStatus, PlanTier } from '@/lib/schemas';
+import { requirePermissions } from '@/lib/route-guard';
 
 export const Route = createFileRoute('/_app/hospitals/')({
   component: HospitalsListPage,
+  beforeLoad: () => requirePermissions(['hospitals.read']),
 });
 
 const STATUS_TONE: Record<HospitalStatus, StatusTone> = {
@@ -126,6 +128,26 @@ function HospitalsListPage() {
         header: 'CSAT',
         accessorKey: 'csat',
         cell: ({ row }) => <span className="tabular-nums">{row.original.csat.toFixed(2)}</span>,
+      },
+      {
+        id: 'baa',
+        header: 'BAA',
+        accessorKey: 'baaStatus',
+        cell: ({ row }) => {
+          const s = row.original.baaStatus;
+          const tone = s === 'signed' ? 'success' : s === 'pending' ? 'warning' : s === 'expired' ? 'danger' : 'neutral';
+          return <Badge tone={tone}>{s}</Badge>;
+        },
+      },
+      {
+        id: 'hipaa',
+        header: 'HIPAA',
+        accessorKey: 'hipaaStatus',
+        cell: ({ row }) => {
+          const s = row.original.hipaaStatus;
+          const tone = s === 'compliant' ? 'success' : s === 'review-needed' ? 'warning' : s === 'non-compliant' ? 'danger' : 'neutral';
+          return <Badge tone={tone}>{s}</Badge>;
+        },
       },
       {
         id: 'risk',

@@ -35,9 +35,11 @@ import type {
   Invoice,
   User,
 } from '@/lib/schemas';
+import { requirePermissions } from '@/lib/route-guard';
 
 export const Route = createFileRoute('/_app/hospitals/$hospitalId')({
   component: HospitalDetailPage,
+  beforeLoad: () => requirePermissions(['hospitals.read']),
 });
 
 const STATUS_TONE: Record<HospitalStatus, StatusTone> = {
@@ -150,6 +152,7 @@ function HospitalDetailPage() {
           <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="usage">Usage</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -190,6 +193,9 @@ function HospitalDetailPage() {
         </TabsContent>
         <TabsContent value="billing">
           <BillingPanel hospitalId={hospitalId} />
+        </TabsContent>
+        <TabsContent value="compliance">
+          {h && <CompliancePanel hospital={h} />}
         </TabsContent>
         <TabsContent value="usage">
           <PlaceholderPanel title="Usage" description="Per-resource usage with overage projections." />
@@ -557,6 +563,86 @@ function CallsPanel({ hospitalId }: { hospitalId: string }) {
     [],
   );
   return <DataTable data={q.data?.items ?? []} columns={columns} isLoading={q.isLoading} />;
+}
+
+function CompliancePanel({ hospital }: { hospital: Hospital }) {
+  const baaStatusTone: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
+    signed: 'success',
+    pending: 'warning',
+    'not-started': 'neutral',
+    expired: 'danger',
+  };
+  const hipaaStatusTone: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
+    compliant: 'success',
+    'review-needed': 'warning',
+    'non-compliant': 'danger',
+    exempt: 'neutral',
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>HIPAA Compliance</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">BAA Status</span>
+            <Badge tone={baaStatusTone[hospital.baaStatus] ?? 'neutral'}>
+              {hospital.baaStatus}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">BAA Signed</span>
+            <span className="text-[var(--color-primary)]">
+              {hospital.baaSignedAt ? format(new Date(hospital.baaSignedAt), 'PPP') : '—'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">HIPAA Status</span>
+            <Badge tone={hipaaStatusTone[hospital.hipaaStatus] ?? 'neutral'}>
+              {hospital.hipaaStatus}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Privacy</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">DPA Signed</span>
+            <span className="text-[var(--color-primary)]">
+              {hospital.dpaSignedAt ? format(new Date(hospital.dpaSignedAt), 'PPP') : '—'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Data Residency Acknowledged</span>
+            <Badge tone={hospital.dataResidencyAcknowledged ? 'success' : 'warning'}>
+              {hospital.dataResidencyAcknowledged ? 'Yes' : 'No'}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--color-tertiary)]">Data Region</span>
+            <span className="text-[var(--color-primary)] uppercase">{hospital.region}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardContent className="py-6">
+          <p className="text-[11px] text-[var(--color-tertiary)] leading-relaxed">
+            Compliance status is refreshed when BAA or DPA documents are uploaded/signed.
+            Hospitals without a signed BAA should not process PHI. Contact legal for
+            any status marked <strong className="text-[var(--color-danger)]">expired</strong> or{' '}
+            <strong className="text-[var(--color-danger)]">non-compliant</strong>.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function BillingPanel({ hospitalId }: { hospitalId: string }) {

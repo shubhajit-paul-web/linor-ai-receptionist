@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Linor super admin panel — hospital tenants, analytics, infra, billing.",
+  "description": "Linor admin panel — hospital tenants, AI agents, conversations, and analytics.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

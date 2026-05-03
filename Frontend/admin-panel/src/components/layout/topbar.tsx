@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, LogOut, Search, Sun, Moon, Monitor, ChevronDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
@@ -16,7 +16,6 @@ import {
 import { useUiStore } from '@/stores/ui-store';
 import { useAuth } from '@/features/auth/auth-context';
 import { ROLES } from '@/app/permissions';
-import { Badge } from '@/components/ui/badge';
 
 function ThemeMenu() {
   const { theme, setTheme } = useTheme();
@@ -57,6 +56,22 @@ function DensityMenuItems() {
       <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
       <DropdownMenuRadioItem value="cozy">Cozy</DropdownMenuRadioItem>
     </DropdownMenuRadioGroup>
+  );
+}
+
+function PhiMaskToggle() {
+  const phiMasked = useUiStore((s) => s.phiMasked);
+  const togglePhiMask = useUiStore((s) => s.togglePhiMask);
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label={phiMasked ? 'Show PHI data' : 'Mask PHI data'}
+      title={phiMasked ? 'PHI masked — click to reveal' : 'PHI visible — click to mask'}
+      onClick={togglePhiMask}
+    >
+      {phiMasked ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+    </Button>
   );
 }
 
@@ -133,17 +148,8 @@ export function Topbar() {
       </button>
 
       <div className="ml-auto flex items-center gap-1">
-        <Badge tone="success" className="hidden sm:inline-flex">
-          <span className="size-1.5 rounded-full bg-[var(--color-success)]" />
-          All systems operational
-        </Badge>
-
-        <Button variant="ghost" size="icon-sm" aria-label="Notifications">
-          <Bell className="size-3.5" />
-        </Button>
-
+        <PhiMaskToggle />
         <ThemeMenu />
-
         <UserMenu />
       </div>
     </header>

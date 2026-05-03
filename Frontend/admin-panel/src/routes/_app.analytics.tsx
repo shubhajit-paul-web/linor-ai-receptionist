@@ -10,9 +10,11 @@ import { DonutChart } from '@/components/charts/donut-chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CHART_COLORS } from '@/components/charts/chart-tokens';
 import { formatCompact } from '@/lib/utils';
+import { requirePermissions } from '@/lib/route-guard';
 
 export const Route = createFileRoute('/_app/analytics')({
   component: AnalyticsPage,
+  beforeLoad: () => requirePermissions(['analytics.read']),
 });
 
 function AnalyticsPage() {
