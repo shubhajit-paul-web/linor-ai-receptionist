@@ -35,6 +35,40 @@ import { faqSchema } from "../lib/validators";
 import { cn, sleep } from "../lib/utils";
 import useFaqStore from "../store/useFaqStore";
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={cn("skeleton rounded-md", className)} />;
+}
+
+function FaqCardSkeleton() {
+  return (
+    <div className="bg-surface border border-border rounded-md p-4">
+      <div className="flex items-start gap-3">
+        <SkeletonBlock className="h-4 w-4 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 space-y-2.5">
+          <div className="flex items-center gap-2">
+            <SkeletonBlock className="h-2.5 w-4 flex-shrink-0" />
+            <SkeletonBlock className="h-3.5 w-3/4" />
+          </div>
+          <div className="flex items-start gap-2">
+            <SkeletonBlock className="h-2.5 w-4 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-1.5">
+              <SkeletonBlock className="h-2.5 w-full" />
+              <SkeletonBlock className="h-2.5 w-2/3" />
+            </div>
+          </div>
+          <SkeletonBlock className="h-2 w-20" />
+        </div>
+        <div className="flex gap-1 flex-shrink-0">
+          <SkeletonBlock className="h-7 w-7 rounded-md" />
+          <SkeletonBlock className="h-7 w-7 rounded-md" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Sortable FAQ Card ────────────────────────────────────────────────────────
 
 function FaqCard({ faq, onEdit, onDelete, isDeleting }) {
@@ -373,12 +407,13 @@ function FaqPanel({ editing, onClose }) {
 // ─── FAQs Page ────────────────────────────────────────────────────────────────
 
 export default function FAQs() {
-  const { isloading, faqs, fetchFaqs, deleteFaq, reorderFaqs, updateFaq } =
+  const { isLoading, faqs, fetchFaqs, deleteFaq, reorderFaqs, updateFaq } =
     useFaqStore();
 
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -387,10 +422,14 @@ export default function FAQs() {
         await fetchFaqs();
       } catch (error) {
         console.error("Failed to load FAQs:", error);
+      } finally {
+        setHasInitialized(true);
       }
     };
     loadFaqs();
   }, [fetchFaqs]);
+
+  const showSkeleton = isLoading || !hasInitialized;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -440,7 +479,11 @@ export default function FAQs() {
         <div>
           <h1 className="text-h2 text-text-primary">FAQs</h1>
           <p className="text-sm text-text-muted mt-0.5">
-            {faqs.length} FAQs — your AI uses these to answer patient questions.
+            {showSkeleton ? (
+              <span className="inline-block skeleton h-3.5 w-56 rounded align-middle" />
+            ) : (
+              `${faqs.length} FAQs — your AI uses these to answer patient questions.`
+            )}
           </p>
         </div>
         <button
@@ -456,22 +499,30 @@ export default function FAQs() {
       </div>
 
       {/* ── Search ──────────────────────────────────────────────── */}
-      <div className="relative mb-4 max-w-sm">
-        <Search
-          size={15}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-        />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search FAQs..."
-          className="w-full h-9 pl-9 pr-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary"
-        />
-      </div>
-      {search && (
-        <p className="text-sm text-text-muted mb-3">
-          {filtered.length} of {faqs.length} FAQs match "{search}"
-        </p>
+      {showSkeleton ? (
+        <div className="mb-4 max-w-sm">
+          <div className="skeleton h-9 w-full rounded-md" />
+        </div>
+      ) : (
+        <>
+          <div className="relative mb-4 max-w-sm">
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search FAQs..."
+              className="w-full h-9 pl-9 pr-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary"
+            />
+          </div>
+          {search && (
+            <p className="text-sm text-text-muted mb-3">
+              {filtered.length} of {faqs.length} FAQs match "{search}"
+            </p>
+          )}
+        </>
       )}
 
       {/* ── Main Layout ─────────────────────────────────────────── */}
@@ -483,7 +534,13 @@ export default function FAQs() {
       >
         {/* List */}
         <div className="flex-1 min-w-0">
-          {filtered.length === 0 ? (
+          {showSkeleton ? (
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <FaqCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
             <EmptyState
               icon={HelpCircle}
               title={search ? "No FAQs match your search" : "No FAQs yet"}

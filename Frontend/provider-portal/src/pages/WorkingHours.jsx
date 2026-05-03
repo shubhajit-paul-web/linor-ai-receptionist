@@ -822,47 +822,49 @@ export default function WorkingHours() {
         </aside>
       </div>
 
-      <div className="sticky bottom-4 z-20">
-        <div className="bg-surface border border-border rounded-md p-3 shadow-md flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-text-primary">
-              {isDirty ? "You have unsaved changes." : "All changes saved."}
-            </p>
-            <p className="text-xs text-text-muted">
-              {validation.valid
-                ? "Schedule is valid and ready to publish."
-                : `${validation.errors.length} validation issue(s) need attention.`}
-            </p>
-          </div>
-          <div className="sm:ml-auto flex items-center gap-2">
-            <button
-              onClick={handleDiscard}
-              disabled={!isDirty || saving}
-              className="h-9 px-3 text-sm border border-border rounded-md disabled:opacity-60 inline-flex items-center gap-2"
-            >
-              <RotateCcw size={14} />
-              Discard
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!isDirty || saving || !validation.valid}
-              className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 inline-flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={14} />
-                  Save Working Hours
-                </>
-              )}
-            </button>
+      {isDirty && (
+        <div className="sticky bottom-4 z-20">
+          <div className="bg-surface border border-border rounded-md p-3 shadow-md flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-text-primary">
+                You have unsaved changes.
+              </p>
+              <p className="text-xs text-text-muted">
+                {validation.valid
+                  ? "Schedule is valid and ready to publish."
+                  : `${validation.errors.length} validation issue(s) need attention.`}
+              </p>
+            </div>
+            <div className="sm:ml-auto flex items-center gap-2">
+              <button
+                onClick={handleDiscard}
+                disabled={saving}
+                className="h-9 px-3 text-sm border border-border rounded-md disabled:opacity-60 inline-flex items-center gap-2"
+              >
+                <RotateCcw size={14} />
+                Discard
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving || !validation.valid}
+                className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 inline-flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} />
+                    Save Working Hours
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -134,7 +134,7 @@ export default function Register() {
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-surface">
         <div className="w-full max-w-[420px]">
           <div className="flex items-center gap-2.5 mb-10">
-            <img src={heroLogo} alt="Linor Logo" className="w-8 h-8 object-contain" />
+            <img src={heroLogo} alt="Linor Logo" className="w-8 h-8 object-contain rounded-md" />
             <span className="text-lg font-bold text-text-primary">Linor</span>
           </div>
 

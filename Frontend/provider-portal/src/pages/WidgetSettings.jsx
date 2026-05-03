@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Bot, MessageCircle, Send, X, Mic, Volume2, Monitor, Smartphone, Sparkles, Wifi, WifiOff } from 'lucide-react';
@@ -8,7 +8,94 @@ import { widgetSchema } from '../lib/validators';
 import { PRESET_COLORS } from '../lib/mockData';
 import { cn } from '../lib/utils';
 
-// ─── Widget Preview ───────────────────────────────────────────────────────────
+// ─── Skeleton ────────────────────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={cn('skeleton rounded-md', className)} />;
+}
+
+function SkeletonSettingsPanel() {
+  return (
+    <div className="space-y-4">
+      {/* Section tabs skeleton */}
+      <div className="flex gap-1 bg-surface-secondary p-1 rounded-sm border border-border w-fit">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonBlock key={i} className="h-8 w-24 rounded-sm" />
+        ))}
+      </div>
+      {/* Settings card skeleton */}
+      <div className="bg-surface border border-border rounded-md p-4 md:p-5 space-y-5">
+        {/* Text field */}
+        <div className="space-y-1.5">
+          <SkeletonBlock className="h-2.5 w-16" />
+          <SkeletonBlock className="h-10 w-full" />
+        </div>
+        {/* Color swatches */}
+        <div className="space-y-2">
+          <SkeletonBlock className="h-2.5 w-24" />
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonBlock key={i} className="h-8 w-8 rounded-md" />
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <SkeletonBlock className="h-8 w-10 rounded-md" />
+            <SkeletonBlock className="h-8 w-28 rounded-md" />
+          </div>
+        </div>
+        {/* Position radio */}
+        <div className="space-y-2">
+          <SkeletonBlock className="h-2.5 w-36" />
+          <div className="flex gap-2">
+            <SkeletonBlock className="h-12 flex-1 rounded-md" />
+            <SkeletonBlock className="h-12 flex-1 rounded-md" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonPreviewStudio() {
+  return (
+    <div className="flex flex-col gap-3 sticky top-6 h-fit">
+      <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <SkeletonBlock className="h-3.5 w-3.5 flex-shrink-0" />
+            <SkeletonBlock className="h-3.5 w-44" />
+          </div>
+          <SkeletonBlock className="h-2.5 w-64 mt-1" />
+        </div>
+        {/* Viewport control */}
+        <div className="space-y-1.5">
+          <SkeletonBlock className="h-2 w-16" />
+          <div className="flex gap-1">
+            <SkeletonBlock className="h-8 flex-1 rounded-sm" />
+            <SkeletonBlock className="h-8 flex-1 rounded-sm" />
+          </div>
+        </div>
+        {/* Widget state control */}
+        <div className="space-y-1.5">
+          <SkeletonBlock className="h-2 w-20" />
+          <div className="flex gap-1">
+            <SkeletonBlock className="h-8 flex-1 rounded-sm" />
+            <SkeletonBlock className="h-8 flex-1 rounded-sm" />
+            <SkeletonBlock className="h-8 flex-1 rounded-sm" />
+          </div>
+        </div>
+        {/* Widget shell placeholder */}
+        <div className="flex justify-center">
+          <SkeletonBlock className="h-[520px] w-[360px] rounded-xl" />
+        </div>
+        <SkeletonBlock className="h-2.5 w-36 mx-auto" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Widget Preview ──────────────────────────────────────────────────────────────
 
 function WidgetPreview({ settings, mode, viewport }) {
   const safeBotName = settings.botName?.trim() || 'Assistant';
@@ -190,9 +277,15 @@ const PREVIEW_MODES = [
 export default function WidgetSettings() {
   const { widgetSettings, updateWidgetSettings } = useClinicStore();
   const toast = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('Appearance');
   const [previewViewport, setPreviewViewport] = useState('desktop');
   const [previewMode, setPreviewMode] = useState('open');
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 1300);
+    return () => clearTimeout(t);
+  }, []);
 
   const { register, handleSubmit, watch, setValue, reset, formState: { isDirty, isSubmitting } } = useForm({
     resolver: zodResolver(widgetSchema),
@@ -220,6 +313,12 @@ export default function WidgetSettings() {
         <p className="text-sm text-text-muted mt-0.5">Customize how your chatbot looks and behaves on your website.</p>
       </div>
 
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6">
+          <SkeletonSettingsPanel />
+          <SkeletonPreviewStudio />
+        </div>
+      ) : (
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6">
           {/* ── Left: Settings ────────────────────────────────── */}
@@ -509,6 +608,7 @@ export default function WidgetSettings() {
           </div>
         )}
       </form>
+      )}
     </div>
   );
 }

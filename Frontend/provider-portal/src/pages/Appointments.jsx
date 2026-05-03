@@ -168,6 +168,35 @@ function DetailDrawer({ appointment, onClose, onStatusChange }) {
   );
 }
 
+// ─── Skeleton Components ──────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }) {
+  return <div className={cn("skeleton rounded-lg", className)} />;
+}
+
+function SkeletonTableRows() {
+  const widths = [14, 120, 90, 100, 80, 60, 64, 110, 16];
+  return (
+    <>
+      {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+        <tr key={i}>
+          {widths.map((w, j) => (
+            <td key={j} className="px-4 py-3">
+              <div
+                className={cn(
+                  "skeleton h-3.5 rounded",
+                  j === 6 && "h-5 rounded-full",
+                )}
+                style={{ width: w }}
+              />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
 // ─── Appointments Page ────────────────────────────────────────────────────────
 
 export default function Appointments() {
@@ -176,6 +205,7 @@ export default function Appointments() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [startDate, setStartDate] = useState("");
@@ -189,6 +219,8 @@ export default function Appointments() {
         await fetchAppointments();
       } catch (error) {
         console.error("Failed to load appointments:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadAppointments();
@@ -312,9 +344,13 @@ export default function Appointments() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-h2 text-text-primary">Appointments</h1>
-          <span className="badge bg-surface-secondary text-text-secondary">
-            {appointments.length} total
-          </span>
+          {isLoading ? (
+            <div className="skeleton h-5 w-14 rounded-full" />
+          ) : (
+            <span className="badge bg-surface-secondary text-text-secondary">
+              {appointments.length} total
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {selectedRows.size > 0 && (
@@ -452,7 +488,28 @@ export default function Appointments() {
 
       {/* ── Table ───────────────────────────────────────────────── */}
       <div className="bg-surface border border-border rounded-md overflow-hidden">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th className="w-10" />
+                  <th>Patient</th>
+                  <th>Phone</th>
+                  <th>Service</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                  <th>Booked At</th>
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody>
+                <SkeletonTableRows />
+              </tbody>
+            </table>
+          </div>
+        ) : filtered.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
             title="No appointments found"
