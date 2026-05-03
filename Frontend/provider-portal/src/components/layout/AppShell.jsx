@@ -1,54 +1,52 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { ToastContainer } from '../shared/Toast';
 import { GlobalSearch } from '../shared/GlobalSearch';
-import useUIStore from '../../store/useUIStore';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 /**
- * AppShell — wraps all authenticated pages.
- * Structure: sidebar (fixed left) + topbar (fixed top, spans content) + main content.
+ * AppShell — wraps every authenticated page.
+ *
+ * Layout:
+ *   ┌──────────┬──────────────────────────────┐
+ *   │          │  Topbar (h-12, hairline)     │
+ *   │ Sidebar  ├──────────────────────────────┤
+ *   │ (flex)   │  Main (scroll, max-w 1440)   │
+ *   └──────────┴──────────────────────────────┘
+ *
+ * The sidebar owns its own width animation; the main column
+ * flexes to fill the remaining viewport. No fixed positioning.
  */
 export function AppShell() {
-  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const location = useLocation();
 
-  // Register global keyboard shortcuts for the whole app
+  // Register Cmd/Ctrl+K, ?, etc. once at the shell level
   useKeyboardShortcuts();
 
-  const contentLeft = sidebarCollapsed ? 64 : 240;
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Fixed sidebar */}
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-text-primary">
       <Sidebar />
 
-      {/* Fixed topbar — starts after sidebar */}
-      <Topbar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Topbar />
 
-      {/* Scrollable main content area */}
-      <main
-        style={{
-          marginLeft: contentLeft,
-          paddingTop: 60, // topbar height
-          transition: 'margin-left 200ms ease-in-out',
-        }}
-        className="min-h-screen"
-      >
-        {/* Page transition wrapper */}
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="p-6"
-        >
-          <Outlet />
-        </motion.div>
-      </main>
+        <main className="flex-1 overflow-y-auto">
+          {/* Page transition wrapper — fades + lifts on route change */}
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
+            className="mx-auto w-full max-w-[1440px] px-6 py-6 md:px-8 md:py-8"
+          >
+            <Outlet />
+          </motion.div>
+        </main>
+      </div>
 
-      {/* Global overlays */}
+      {/* Global overlays — outside the layout flow */}
       <GlobalSearch />
       <ToastContainer />
     </div>
