@@ -1,5 +1,6 @@
 require("dotenv").config();
 const ImageKit = require("imagekit");
+const logger = require("../utils/logger");
 
 // Validate ImageKit configuration
 const validateImageKitConfig = () => {
@@ -14,8 +15,7 @@ const validateImageKitConfig = () => {
     .map(([key]) => key);
 
   if (missing.length > 0) {
-    console.warn("⚠️  ImageKit Configuration Warning:");
-    console.warn("Missing environment variables:", missing.join(", "));
+    logger.warn("ImageKit configuration incomplete", { missing });
   }
 
   return {
@@ -36,13 +36,14 @@ try {
       publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
       privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
     });
+    logger.info("ImageKit initialized successfully", { endpoint: process.env.IMAGEKIT_URL_ENDPOINT });
 
   } else {
-    console.error("✗ ImageKit initialization failed - missing credentials");
+    logger.error("ImageKit initialization failed", { reason: "Missing credentials", missing: config.missing });
     imagekit = null;
   }
 } catch (error) {
-  console.error("✗ ImageKit initialization error:", error.message);
+  logger.error("ImageKit initialization error", { message: error.message, error: error.toString() });
   imagekit = null;
 }
 

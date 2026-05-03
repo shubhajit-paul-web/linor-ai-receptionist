@@ -7,6 +7,7 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const tenantRoutes = require("./Routes/tenants.route");
+const logger = require("./utils/logger");
 
 const app = express();
 
@@ -75,7 +76,7 @@ app.get("/", (req, res) => res.json({ status: "API is running 🚀" }));
 // ── Global Error Handler ──────────────────────────────────
 // Must be last - catches errors thrown in asyncHandler and other routes
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error("Unhandled error", { message: err.message, stack: err.stack });
   res.status(err.status || 500).json({
     message: err.message || "Internal server error",
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
