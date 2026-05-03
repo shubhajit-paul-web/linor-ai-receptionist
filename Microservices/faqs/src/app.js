@@ -6,6 +6,7 @@ const xss = require("xss-clean");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const logger = require("./utils/logger");
 
 const app = express();
 
@@ -56,7 +57,13 @@ app.use(
 
 // ── Request logging ────────────────────────────────────────
 if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
+  app.use(
+    morgan("dev", {
+      stream: {
+        write: (message) => logger.info(message.trim()),
+      },
+    }),
+  );
 }
 
 // ── Health check ───────────────────────────────────────────
@@ -75,7 +82,11 @@ app.get("/", (req, res) => res.json({ status: "FAQ Service running 🚀" }));
 
 // ── Global error handler ───────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error(err.message || "Unhandled application error", {
+    stack: err.stack,
+    path: req.originalUrl,
+    method: req.method,
+  });
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",
