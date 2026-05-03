@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken')
 const User = require('../model/user.model.js')
 const ApiError = require('../utils/ApiError.js')
 const asyncHandler = require('../utils/asyncHandler.js')
+const logger = require('../utils/logger.js')
 
 exports.protect = asyncHandler(async (req, res, next) => {
   let token
@@ -14,6 +15,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
   }
 
   if (!token) {
+    logger.warn('Authorization attempt without token');
     throw new ApiError(401, 'Not authorized — no token')
   }
 
@@ -21,12 +23,16 @@ exports.protect = asyncHandler(async (req, res, next) => {
   let decoded
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET)
+    logger.debug('Token verified successfully', { userId: decoded.id });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
+      logger.warn('Authorization attempt with expired token');
       throw new ApiError(401, 'Token has expired, please login again')
     } else if (error.name === 'JsonWebTokenError') {
+      logger.warn('Authorization attempt with invalid token');
       throw new ApiError(401, 'Invalid token')
     } else {
+      logger.warn('Token verification failed', { error: error.message });
       throw new ApiError(401, 'Token verification failed')
     }
   }
@@ -36,11 +42,13 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
   if (!user) {
     // Token was valid but user was deleted
+    logger.warn('Token valid but user not found', { userId: decoded.id });
     throw new ApiError(401, 'User no longer exists')
   }
 
   // Check if account is active
   if (user.isActive === false) {
+    logger.warn('Authorization attempt with deactivated account', { userId: decoded.id });
     throw new ApiError(403, 'Account is deactivated')
   }
 
