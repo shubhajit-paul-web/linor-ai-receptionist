@@ -2,12 +2,13 @@ require("dotenv").config();
 
 const app = require("./src/app");
 const connectDB = require("./src/db/db");
+const logger = require("./src/utils/logger");
 
 // ── Validate critical env vars ─────────────────────────────
 const REQUIRED_ENVS = ["MONGODB_URI", "JWT_SECRET", "TENANT_SERVICE_URL"];
 REQUIRED_ENVS.forEach((key) => {
   if (!process.env[key]) {
-    console.error(`❌ Missing required env variable: ${key}`);
+    logger.error(`Missing required env variable: ${key}`);
     process.exit(1);
   }
 });
@@ -18,16 +19,16 @@ connectDB();
 // ── Start server ───────────────────────────────────────────
 const PORT = process.env.PORT || 5003;
 const server = app.listen(PORT, () => {
-  console.log(
+  logger.info(
     `Appointment Service running in ${process.env.NODE_ENV} mode on port ${PORT}`,
   );
 });
 
 // ── Graceful shutdown ──────────────────────────────────────
 const shutdown = (signal) => {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
+  logger.info(`${signal} received. Shutting down gracefully...`);
   server.close(() => {
-    console.log("Appointment Service shut down cleanly");
+    logger.info("Appointment Service shut down cleanly");
     process.exit(0);
   });
 };
@@ -37,6 +38,6 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 
 // ── Unhandled rejections ───────────────────────────────────
 process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Rejection:", err.message);
+  logger.error("Unhandled Rejection:", { message: err.message });
   server.close(() => process.exit(1));
 });

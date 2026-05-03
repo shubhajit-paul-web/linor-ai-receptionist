@@ -6,6 +6,7 @@ const xss = require("xss-clean");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const logger = require("./utils/logger");
 
 const app = express();
 
@@ -77,7 +78,12 @@ app.get("/", (req, res) =>
 
 // ── Global error handler ───────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error("Request error", {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+  });
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",
