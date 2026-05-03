@@ -37,6 +37,10 @@ setupVoiceSockets(io);
 // ── Start server ───────────────────────────────────────────
 const PORT = process.env.PORT || 5004;
 
+server.listen(PORT, () => {
+  logger.info("Chat service listening on port %d  [%s]", PORT, process.env.NODE_ENV || "development");
+});
+
 // ── Graceful shutdown — close Redis + server cleanly ───────
 const shutdown = async (signal) => {
   logger.info("%s received. Shutting down gracefully...", signal);
