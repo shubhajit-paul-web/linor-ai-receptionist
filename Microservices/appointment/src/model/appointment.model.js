@@ -59,8 +59,30 @@ const AppointmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound index — fast conflict check per clinic per slot
+// ─────────────────────────────────────────
+// INDEXES for optimal query performance
+// ─────────────────────────────────────────
+
+// ─────────────────────────────────────────
+// INDEXES for optimal query performance
+// ─────────────────────────────────────────
+
+// 1. EQUALITY: Fast conflict check per clinic per slot
 AppointmentSchema.index({ user_id: 1, date: 1, time: 1 });
-AppointmentSchema.index({ user_id: 1, status: 1 });
+
+// 2. EQUALITY + RANGE: Fast analytics and slot checking
+AppointmentSchema.index({ user_id: 1, status: 1, date: 1 });
+
+// 3. ESR RULE (Equality, Sort, Range): Perfect for your appointmentListPipeline pagination
+AppointmentSchema.index({ user_id: 1, createdAt: -1, date: 1 });
+
+// 4. TEXT SEARCH: Fixes the $regex full collection scan for patient names
+AppointmentSchema.index(
+  { user_id: 1, patientName: "text" },
+  { name: "patient_name_text_index" }
+);
+
+// 5. SPARSE: Fast queries on sessionId (only indexes docs that actually have a sessionId)
+AppointmentSchema.index({ sessionId: 1 }, { sparse: true });
 
 module.exports = mongoose.model("Appointment", AppointmentSchema);
