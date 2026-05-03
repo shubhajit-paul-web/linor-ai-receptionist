@@ -24,9 +24,29 @@ const RATE_LIMIT_TTL = 60;
 // POST /api/chat
 // ─────────────────────────────────────────────────────────────
 exports.chat = asyncHandler(async (req, res) => {
-  const { message, sessionId, history = [] } = req.body;
+  const body = req.body || {};
   const clinic = req.clinic;
   const user_id = req.user_id;
+
+  // ── Normalise body: accept both new and old widget formats ────────────────
+  // New format (current):  { message: string,  sessionId: string,  history: [] }
+  // Old format (cached):   { messages: [{role, content}], session_id: string }
+
+  let message   = body.message;
+  let sessionId = body.sessionId || body.session_id;
+  let history   = Array.isArray(body.history) ? body.history : [];
+
+  if (!message && Array.isArray(body.messages) && body.messages.length > 0) {
+    // Old format: messages array — extract the last user message as the
+    // current message and everything before it as history.
+    const msgs = body.messages;
+    const last = msgs[msgs.length - 1];
+    message = last?.content ?? last?.text ?? "";
+    history = msgs.slice(0, -1).map(({ role, content, text }) => ({
+      role: role || "user",
+      content: content || text || "",
+    }));
+  }
 
   if (!message?.trim()) {
     return res

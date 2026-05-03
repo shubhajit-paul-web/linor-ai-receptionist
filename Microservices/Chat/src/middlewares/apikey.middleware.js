@@ -2,7 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const redis = require("../service/redisClient");
 const logger = require("../utils/logger");
 
-const CACHE_TTL = 60 * 5; // cache clinic data for 5 minutes
+const CACHE_TTL = 60 * 60 * 4; // cache clinic data for 4 hours
 const cacheKey  = (apiKey) => `clinic:${apiKey}`;
 
 exports.verifyApiKey = asyncHandler(async (req, res, next) => {
