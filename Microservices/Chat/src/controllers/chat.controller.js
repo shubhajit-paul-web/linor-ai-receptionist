@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const { callAI } = require("../utils/geminiClient");
 const { buildSystemPrompt } = require("../utils/promptBuilder");
+const redis = require("../service/redisClient");
 const {
   detectBookingIntent,
   detectSymptomIntent,
@@ -12,12 +13,14 @@ const {
   handleBookingStep,
 } = require("../utils/bookingStateMachine");
 
+const RATE_LIMIT = 20; // max messages per minute per session
+const RATE_LIMIT_TTL = 60; // seconds
+
 // ─────────────────────────────────────────────────────────────
 // POST /api/chat
 // ─────────────────────────────────────────────────────────────
 exports.chat = asyncHandler(async (req, res) => {
   const { message, sessionId, history = [] } = req.body;
-
   const clinic = req.clinic;
   const user_id = req.user_id;
 
@@ -32,43 +35,55 @@ exports.chat = asyncHandler(async (req, res) => {
       .json({ success: false, message: "sessionId is required" });
   }
 
+  // ── Rate limiting — stop spam ──────────────────────────────
+  try {
+    const rateLimitKey = `ratelimit:${sessionId}`;
+    const requests = await redis.incr(rateLimitKey);
+    if (requests === 1) await redis.expire(rateLimitKey, RATE_LIMIT_TTL);
+
+    if (requests > RATE_LIMIT) {
+      return res.status(429).json({
+        success: false,
+        message:
+          "Too many messages. Please slow down and try again in a minute.",
+      });
+    }
+  } catch {
+    // Redis rate limit failed — don't block the user, just continue
+    console.warn("Rate limit check failed — continuing without it");
+  }
+
   // ── Step 1: Already in booking flow ───────────────────────
-  if (isInBookingFlow(sessionId)) {
-    const result = handleBookingStep(sessionId, message, clinic);
+  const inBooking = await isInBookingFlow(sessionId);
+  if (inBooking) {
+    const result = await handleBookingStep(sessionId, message, clinic);
 
     if (result.done && result.appointmentData) {
-      const apiKey = req.headers["x-api-key"];
-      if (result.done && result.appointmentData) {
-        await saveAppointment(
-          req.headers["x-api-key"], // ✅ pass api key
-          user_id,
-          sessionId,
-          result.appointmentData,
-        );
-      }
+      await saveAppointment(
+        req.headers["x-api-key"],
+        user_id,
+        sessionId,
+        result.appointmentData,
+      );
     }
 
     return res.json({ success: true, reply: result.reply });
   }
 
-  // ── Step 2: Explicit booking intent ───────────────────────
+  // ── Step 2: Booking intent ─────────────────────────────────
   if (detectBookingIntent(message)) {
-    initSession(sessionId);
+    await initSession(sessionId);
     return res.json({
       success: true,
       reply: `I'd be happy to help you book an appointment! May I have your full name please?`,
     });
   }
 
-  // ── Step 3: Symptom intent detected ───────────────────────
-  // Let AI handle it — prompt already has full symptom analysis instructions
-  // Just add extra instruction to system prompt for this turn
+  // ── Step 3: Symptom + tone detection ──────────────────────
   const isSymptom = detectSymptomIntent(message);
-
-  // ── Step 4: Detect tone ────────────────────────────────────
   const tone = detectTone(message);
 
-  // ── Step 5: Fetch FAQs ─────────────────────────────────────
+  // ── Step 4: Fetch FAQs from FAQ service ───────────────────
   let faqs = [];
   try {
     const faqRes = await fetch(
@@ -83,10 +98,9 @@ exports.chat = asyncHandler(async (req, res) => {
     console.warn("FAQ service unavailable — continuing without FAQs");
   }
 
-  // ── Step 6: Build prompt ───────────────────────────────────
+  // ── Step 5: Build prompt ───────────────────────────────────
   let systemPrompt = buildSystemPrompt(clinic, faqs);
 
-  // Tone injection
   const toneInstructions = {
     urgent:
       "\n\nCRITICAL: Patient may be in distress. Respond calmly and fast. If life-threatening, tell them to call 112 immediately.",
@@ -98,7 +112,6 @@ exports.chat = asyncHandler(async (req, res) => {
   };
   systemPrompt += toneInstructions[tone] || "";
 
-  // Symptom injection — remind AI to follow the symptom flow
   if (isSymptom) {
     systemPrompt += `
 
@@ -110,18 +123,17 @@ Follow the 4-step symptom analysis flow:
 4. Check if that specialist is available at our clinic and offer booking if yes`;
   }
 
-  // ── Step 7: Call Groq ──────────────────────────────────────
-  const recentHistory = history.slice(-6).map((m) => ({
-    role: m.role,
-    content: m.content,
-  }));
-  recentHistory.push({ role: "user", content: message });
+  // ── Step 6: Call AI ────────────────────────────────────────
+  const recentHistory = [
+    ...history.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+    { role: "user", content: message },
+  ];
 
   let aiReply;
   try {
     aiReply = await callAI(systemPrompt, recentHistory);
   } catch (err) {
-    console.error("Groq error:", err.message);
+    console.error("AI error:", err.message);
     aiReply = `I'm having a little trouble right now. Please call us at ${clinic.phone || "our clinic"} for immediate assistance.`;
   }
 
@@ -145,7 +157,7 @@ exports.getClinicInfo = asyncHandler(async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// Helper — save appointment to Appointment service
+// Helper — save confirmed appointment
 // ─────────────────────────────────────────────────────────────
 const saveAppointment = async (apiKey, user_id, sessionId, data) => {
   try {
@@ -162,13 +174,13 @@ const saveAppointment = async (apiKey, user_id, sessionId, data) => {
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("Appointment service error:", response.status, error);
+      const err = await response.text();
+      console.error("Appointment save failed:", response.status, err);
       return;
     }
 
     const result = await response.json();
-    console.log("Appointment saved successfully:", result.data?._id);
+    console.log("✅ Appointment saved:", result.data?._id);
   } catch (err) {
     console.error("Failed to save appointment:", err.message);
   }
