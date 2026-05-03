@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const appointmentRoutes = require("./Routes/appointments.route");
 const cookieParser = require("cookie-parser");
+const logger = require("./utils/logger");
 
 const app = express();
 
@@ -24,7 +25,12 @@ app.get("/", (req, res) =>
 );
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error("Request error", {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+  });
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",
