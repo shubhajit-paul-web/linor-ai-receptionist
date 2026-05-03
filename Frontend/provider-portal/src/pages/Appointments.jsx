@@ -439,7 +439,7 @@ export default function Appointments() {
                 className={cn(
                   "ml-2 px-1.5 py-0.5 text-xs rounded-full",
                   status === s
-                    ? "bg-primary text-white"
+                    ? "bg-primary text-primary-on"
                     : "bg-surface-secondary text-text-muted",
                 )}
               >
@@ -569,7 +569,7 @@ export default function Appointments() {
                 className={cn(
                   "w-8 h-8 text-xs rounded-md border transition-colors",
                   n === page
-                    ? "bg-primary border-primary text-white"
+                    ? "bg-primary border-primary text-primary-on"
                     : "border-border hover:bg-surface-secondary",
                 )}
               >

@@ -846,7 +846,7 @@ export default function WorkingHours() {
             <button
               onClick={handleSave}
               disabled={!isDirty || saving || !validation.valid}
-              className="h-9 px-4 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover disabled:opacity-60 inline-flex items-center gap-2"
+              className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 inline-flex items-center gap-2"
             >
               {saving ? (
                 <>

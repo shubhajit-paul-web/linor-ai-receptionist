@@ -148,7 +148,7 @@ export function ConfirmModal({
                     'disabled:opacity-50 disabled:cursor-not-allowed',
                     confirmDanger
                       ? 'bg-danger text-white hover:bg-danger/90'
-                      : 'bg-primary text-white hover:bg-primary-hover'
+                      : 'bg-primary text-primary-on hover:bg-primary-hover'
                   )}
                 >
                   {confirmLabel}

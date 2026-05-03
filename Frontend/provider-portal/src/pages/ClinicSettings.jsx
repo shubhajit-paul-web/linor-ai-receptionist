@@ -508,7 +508,7 @@ export default function ClinicSettings() {
                     <button
                       type="submit"
                       disabled={saving || !generalForm.formState.isDirty} // Simplified!
-                      className="h-9 px-5 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
+                      className="h-9 px-5 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
                     >
                       {saving ? (
                         <>
@@ -538,7 +538,7 @@ export default function ClinicSettings() {
                     </div>
                     <Link
                       to="/working-hours"
-                      className="h-8 px-3 inline-flex items-center rounded-md bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors"
+                      className="h-8 px-3 inline-flex items-center rounded-md bg-primary text-primary-on text-xs font-semibold hover:bg-primary-hover transition-colors"
                     >
                       Open Manager
                     </Link>
@@ -655,7 +655,7 @@ export default function ClinicSettings() {
                       <button
                         type="submit"
                         disabled={!newService.trim() || saving}
-                        className="h-9 px-4 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
+                        className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
                       >
                         {saving ? (
                           <>
@@ -738,7 +738,7 @@ export default function ClinicSettings() {
                     <button
                       type="submit"
                       disabled={saving || !contactForm.formState.isDirty}
-                      className="h-9 px-5 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
+                      className="h-9 px-5 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
                     >
                       {saving ? (
                         <>

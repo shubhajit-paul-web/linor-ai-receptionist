@@ -116,7 +116,7 @@ export default function EmbedCode() {
       {/* ── Step 1: API Key ────────────────────────────────────── */}
       <div className="bg-surface border border-border rounded-md p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">1</div>
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-on text-xs font-bold flex-shrink-0">1</div>
           <h2 className="text-h4 text-text-primary">Your API Key</h2>
         </div>
         <div className="bg-surface-secondary border border-border rounded-md p-4 flex items-center gap-3">
@@ -149,7 +149,7 @@ export default function EmbedCode() {
       {/* ── Step 2: Embed Snippet ──────────────────────────────── */}
       <div className="bg-surface border border-border rounded-md p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">2</div>
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-on text-xs font-bold flex-shrink-0">2</div>
           <h2 className="text-h4 text-text-primary">Copy the Embed Snippet</h2>
         </div>
 
@@ -183,7 +183,7 @@ export default function EmbedCode() {
       {/* ── Step 3: Test ──────────────────────────────────────── */}
       <div className="bg-surface border border-border rounded-md p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">3</div>
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-on text-xs font-bold flex-shrink-0">3</div>
           <h2 className="text-h4 text-text-primary">Test It</h2>
         </div>
         <div className="flex gap-2 mb-3">
@@ -196,7 +196,7 @@ export default function EmbedCode() {
           <button
             disabled={!testUrl}
             onClick={() => window.open(testUrl, '_blank')}
-            className="h-10 px-4 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary-hover disabled:opacity-50 flex items-center gap-2 transition-colors"
+            className="h-10 px-4 text-sm font-medium bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-50 flex items-center gap-2 transition-colors"
           >
             <ExternalLink size={15} />
             Open Test
@@ -211,7 +211,7 @@ export default function EmbedCode() {
       {/* ── Step 4: Verify ────────────────────────────────────── */}
       <div className="bg-surface border border-border rounded-md p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">4</div>
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-on text-xs font-bold flex-shrink-0">4</div>
           <h2 className="text-h4 text-text-primary">Verify Connection</h2>
         </div>
         <div className={cn(

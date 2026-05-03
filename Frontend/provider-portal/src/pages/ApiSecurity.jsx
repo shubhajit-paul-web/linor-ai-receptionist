@@ -188,7 +188,7 @@ export default function ApiSecurity() {
           />
           <button
             onClick={handleAddDomain}
-            className="h-10 px-4 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover flex items-center gap-2 transition-colors"
+            className="h-10 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover flex items-center gap-2 transition-colors"
           >
             <Plus size={15} />
             Add
@@ -247,7 +247,7 @@ export default function ApiSecurity() {
             <button
               type="submit"
               disabled={pwForm.formState.isSubmitting}
-              className="h-9 px-4 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
+              className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
             >
               {pwForm.formState.isSubmitting ? (
                 <>
