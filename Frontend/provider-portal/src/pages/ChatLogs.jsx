@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bot, MessageSquare, Download, Clock, Calendar,
-  Filter, Copy, Smile, Frown, Meh, Globe, Smartphone, FileText, Check, Code
+  Filter, Copy, Smile, Frown, Meh, Globe, Smartphone, FileText, Check, Code,
+  Maximize, Minimize
 } from 'lucide-react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { EmptyState } from '../components/shared/EmptyState';
@@ -122,6 +123,28 @@ export default function ChatLogs() {
   // Using our rich mock data
   const [sessions] = useState(RICH_CHAT_SESSIONS);
   const [activeId, setActiveId] = useState(RICH_CHAT_SESSIONS[0]?.id || null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  // Handle escape key and body scroll lock for full screen
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+    
+    if (isFullScreen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullScreen]);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -214,10 +237,30 @@ export default function ChatLogs() {
       </div>
 
       {/* ── Main Workspace ──────────────────────────────────────── */}
-      <div className="flex gap-0 border border-border rounded-xl shadow-sm bg-surface overflow-hidden" style={{ height: 'calc(100vh - 240px)', minHeight: '600px' }}>
+      <motion.div 
+        layout
+        className={cn(
+          "flex gap-0 bg-surface overflow-hidden",
+          isFullScreen 
+            ? "fixed inset-0 z-[100] m-0 rounded-none border-0"
+            : "border border-border rounded-xl shadow-sm relative"
+        )} 
+        style={
+          isFullScreen 
+            ? { height: '100vh', width: '100vw' }
+            : { height: 'calc(100vh - 240px)', minHeight: '600px' }
+        }
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+      >
 
         {/* ── Left Panel: List & Filters ────────────────────────── */}
-        <div className="w-[380px] flex-shrink-0 border-r border-border flex flex-col bg-surface/50">
+        <motion.div 
+          layout
+          className={cn(
+            "flex-shrink-0 border-r border-border flex flex-col bg-surface/50",
+            isFullScreen ? "w-[420px]" : "w-[380px]"
+          )}
+        >
 
           {/* Header & Global Filters */}
           <div className="p-4 border-b border-border bg-surface z-10 space-y-3">
@@ -226,9 +269,18 @@ export default function ChatLogs() {
                 <MessageSquare size={16} className="text-primary" />
                 Conversations
               </h2>
-              <span className="text-xs font-medium text-text-muted bg-surface-secondary px-2 py-0.5 rounded-full border border-border">
-                {filteredSessions.length} total
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-text-muted bg-surface-secondary px-2 py-0.5 rounded-full border border-border">
+                  {filteredSessions.length} total
+                </span>
+                <button 
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors"
+                  title={isFullScreen ? "Exit Full Screen (Esc)" : "Full Screen"}
+                >
+                  {isFullScreen ? <Minimize size={14} /> : <Maximize size={14} />}
+                </button>
+              </div>
             </div>
 
             <div className="relative group">
@@ -330,10 +382,10 @@ export default function ChatLogs() {
               )}
             </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── Right Panel: Transcript Area ────────────────────────── */}
-        <div className="flex-1 flex flex-col relative bg-[#f8f9fa] dark:bg-[#121319]">
+        <motion.div layout className="flex-1 flex flex-col relative bg-[#f8f9fa] dark:bg-[#121319]">
           {!activeSession ? (
             <div className="flex-1 flex items-center justify-center bg-surface">
               <EmptyState
@@ -460,8 +512,8 @@ export default function ChatLogs() {
               </div>
             </>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
