@@ -7,7 +7,7 @@ const {
   login,
   logout,
   getMe,
-} = require("../controllers/auth.controller.js");
+} = require("../Controllers/auth.controller.js");
 const {protect} = require("../Middlewares/auth.middleware.js"); 
 const {
   validateSignup,
