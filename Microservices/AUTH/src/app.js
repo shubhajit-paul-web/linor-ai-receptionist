@@ -19,16 +19,15 @@ const app = express();
 app.use(helmet());
 
 // CORS — allow only our frontend
-app.use(
-  cors({
-    origin: [
-      "https://provider-portal-eosin-seven.vercel.app/",
-      "http://localhost:5173",
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  }),
-);
+app.use(cors({
+  origin: [
+    "https://provider-portal-eosin-seven.vercel.app",  // no trailing slash
+    "http://localhost:5173",
+    "http://localhost:5174",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+}));
 
 app.use(cookieParser());
 
