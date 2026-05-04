@@ -48,6 +48,8 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   const {
     clinicName,
     address,
+    city,           // <-- Add this
+    postalCode,
     phone,
     workingHrs,
     services,
@@ -75,6 +77,8 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   const updateData = {};
   if (clinicName !== undefined) updateData.clinicName = clinicName;
   if (address !== undefined) updateData.address = address;
+  if (city !== undefined) updateData.city = city;
+  if (postalCode !== undefined) updateData.postalCode = postalCode;
   if (phone !== undefined) updateData.phone = phone;
   if (workingHrs !== undefined) updateData.workingHrs = workingHrs;
   if (services !== undefined) updateData.services = services;

@@ -2,15 +2,15 @@ const mongoose = require("mongoose");
 
 const WorkingHoursSchema = new mongoose.Schema(
   {
-    monday:    { type: String, default: "9:00 AM - 6:00 PM" },
-    tuesday:   { type: String, default: "9:00 AM - 6:00 PM" },
+    monday: { type: String, default: "9:00 AM - 6:00 PM" },
+    tuesday: { type: String, default: "9:00 AM - 6:00 PM" },
     wednesday: { type: String, default: "9:00 AM - 6:00 PM" },
-    thursday:  { type: String, default: "9:00 AM - 6:00 PM" },
-    friday:    { type: String, default: "9:00 AM - 6:00 PM" },
-    saturday:  { type: String, default: "10:00 AM - 2:00 PM" },
-    sunday:    { type: String, default: "Closed" },
+    thursday: { type: String, default: "9:00 AM - 6:00 PM" },
+    friday: { type: String, default: "9:00 AM - 6:00 PM" },
+    saturday: { type: String, default: "10:00 AM - 2:00 PM" },
+    sunday: { type: String, default: "Closed" },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const TenantSchema = new mongoose.Schema(
@@ -30,6 +30,16 @@ const TenantSchema = new mongoose.Schema(
       default: "",
     },
     address: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    postalCode: {
       type: String,
       trim: true,
       default: "",
@@ -75,7 +85,7 @@ const TenantSchema = new mongoose.Schema(
       select: false, // Never return in queries by default
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const tenantModel = mongoose.model("Tenant", TenantSchema);

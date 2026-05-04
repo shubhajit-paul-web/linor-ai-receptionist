@@ -23,9 +23,21 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
       select: false, // never return password in queries by default
+      // Optional for OAuth users
+    },
+
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allow null for non-OAuth users
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
 
     isActive: {
@@ -40,9 +52,9 @@ const userSchema = new mongoose.Schema(
 
 // ─── MIDDLEWARE: Hash password before saving ───────────────────
 userSchema.pre("save", async function () {
-  // Only hash if password was actually changed
-  // If user updates their name — don't re-hash the password
-  if (!this.isModified("password")) return;
+  // Only hash if password was actually changed AND exists
+  // OAuth users won't have passwords, so skip hashing for them
+  if (!this.isModified("password") || !this.password) return;
 
   this.password = await bcrypt.hash(this.password, 12);
 });

@@ -9,6 +9,9 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const errorHandler = require("./Middlewares/error.middleware.js");
 const authRoutes = require("./Routes/auth.routes.js");
+const session = require('express-session');
+const passport = require('passport');
+require('./OAuth/passport.js'); // Path to your strategy file
 
 const app = express();
 
@@ -24,6 +27,10 @@ app.use(
 );
 
 app.use(cookieParser());
+
+app.use(session({ secret: 'your_secret', resave: false, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 // Body parsing — understand JSON request bodies (BEFORE sanitization)

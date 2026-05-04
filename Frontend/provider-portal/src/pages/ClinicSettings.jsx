@@ -89,7 +89,10 @@ function SkeletonWorkingHours() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="border border-border rounded-md p-4 bg-surface-secondary space-y-2">
+          <div
+            key={i}
+            className="border border-border rounded-md p-4 bg-surface-secondary space-y-2"
+          >
             <SkeletonBlock className="h-2.5 w-16" />
             <SkeletonBlock className="h-4 w-24" />
           </div>
@@ -155,7 +158,10 @@ function SkeletonDangerZone() {
       </div>
       <SkeletonBlock className="h-3.5 w-72" />
       {Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} className="flex items-center justify-between p-4 bg-surface border border-danger/20 rounded-md">
+        <div
+          key={i}
+          className="flex items-center justify-between p-4 bg-surface border border-danger/20 rounded-md"
+        >
           <div className="space-y-1.5">
             <SkeletonBlock className="h-3.5 w-32" />
             <SkeletonBlock className="h-2.5 w-48" />
@@ -277,8 +283,6 @@ export default function ClinicSettings() {
     try {
       const response = await tenantApi.getImageKitAuth();
 
-
-
       // If your backend returns the keys directly:
       if (response.token && response.signature && response.expire) {
         return response;
@@ -318,7 +322,7 @@ export default function ClinicSettings() {
       city: clinic.city,
       postalCode: clinic.postalCode,
       phone: clinic.phone,
-      email: clinic.email,
+      email: clinic.email, // Ensure this value is passed here
     },
   });
 
@@ -349,15 +353,15 @@ export default function ClinicSettings() {
         ...clinic,
         address: data.address,
         city: data.city,
-        postalCode: data.postalCode,
+        postalCode: data.postalCode, // Ensure this is here
         phone: data.phone,
-        email: data.email,
       });
       toast.success("Contact info saved!");
+      // Reset the form with the new data so isDirty becomes false again
       contactForm.reset(data);
     } catch (error) {
       console.error("Error saving contact info:", error);
-      toast.error("Failed to save contact info. Please try again.");
+      toast.error("Failed to save contact info.");
     } finally {
       setSaving(false);
     }
@@ -483,480 +487,495 @@ export default function ClinicSettings() {
                   {section === "General Info" && <SkeletonGeneralInfo />}
                   {section === "Working Hours" && <SkeletonWorkingHours />}
                   {section === "Services" && <SkeletonServices />}
-                  {section === "Contact & Location" && <SkeletonContactLocation />}
+                  {section === "Contact & Location" && (
+                    <SkeletonContactLocation />
+                  )}
                   {section === "Danger Zone" && <SkeletonDangerZone />}
                 </>
               ) : (
                 <>
                   {/* General Info */}
                   {section === "General Info" && (
-                <form
-                  onSubmit={generalForm.handleSubmit(saveGeneral)}
-                  className="bg-surface border border-border rounded-md p-6 space-y-5"
-                >
-                  <h2 className="text-h4 text-text-primary mb-1">
-                    General Info
-                  </h2>
+                    <form
+                      onSubmit={generalForm.handleSubmit(saveGeneral)}
+                      className="bg-surface border border-border rounded-md p-6 space-y-5"
+                    >
+                      <h2 className="text-h4 text-text-primary mb-1">
+                        General Info
+                      </h2>
 
-                  {/* Logo upload */}
-                  <div>
-                    <label className="text-xs font-medium text-text-secondary block mb-2">
-                      Clinic Logo
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-md border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-surface-secondary relative">
-                        {isUploadingLogo ? (
-                          <Loader2
-                            size={20}
-                            className="text-primary animate-spin"
-                          />
-                        ) : logoPreview ? (
-                          <img
-                            src={logoPreview}
-                            alt="Logo"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Upload size={20} className="text-text-muted" />
-                        )}
-                      </div>
+                      {/* Logo upload */}
+                      <div>
+                        <label className="text-xs font-medium text-text-secondary block mb-2">
+                          Clinic Logo
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-md border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-surface-secondary relative">
+                            {isUploadingLogo ? (
+                              <Loader2
+                                size={20}
+                                className="text-primary animate-spin"
+                              />
+                            ) : logoPreview ? (
+                              <img
+                                src={logoPreview}
+                                alt="Logo"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Upload size={20} className="text-text-muted" />
+                            )}
+                          </div>
 
-                      {/* ImageKit Wrapper */}
-                      <IKContext
-                        publicKey={
-                          import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY ||
-                          "YOUR_PUBLIC_KEY"
-                        }
-                        urlEndpoint={
-                          import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT ||
-                          "YOUR_URL_ENDPOINT"
-                        }
-                        authenticator={authenticator}
-                      >
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => fileRef.current?.click()}
-                            disabled={isUploadingLogo}
-                            className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                          {/* ImageKit Wrapper */}
+                          <IKContext
+                            publicKey={
+                              import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY ||
+                              "YOUR_PUBLIC_KEY"
+                            }
+                            urlEndpoint={
+                              import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT ||
+                              "YOUR_URL_ENDPOINT"
+                            }
+                            authenticator={authenticator}
                           >
-                            {isUploadingLogo ? "Uploading..." : "Upload logo"}
-                          </button>
-                          {logoPreview && !isUploadingLogo && (
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                setLogoPreview(null);
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => fileRef.current?.click()}
+                                disabled={isUploadingLogo}
+                                className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                              >
+                                {isUploadingLogo
+                                  ? "Uploading..."
+                                  : "Upload logo"}
+                              </button>
+                              {logoPreview && !isUploadingLogo && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    setLogoPreview(null);
+                                    try {
+                                      await updateProfileOnApi({
+                                        ...clinic,
+                                        logo: null, // Clear it in the DB
+                                      });
+                                      toast.info("Logo removed.");
+                                    } catch (err) {
+                                      toast.error("Failed to remove logo.");
+                                    }
+                                  }}
+                                  className="ml-3 text-sm text-danger hover:underline"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                              <p className="text-xs text-text-muted mt-0.5">
+                                PNG, JPG up to 2MB. Shown in chatbot widget.
+                              </p>
+                            </div>
+
+                            {/* Hidden ImageKit Input */}
+                            <IKUpload
+                              style={{ display: "none" }}
+                              ref={fileRef} // Make sure this is ref, not inputRef based on your version
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files.length > 0)
+                                  setIsUploadingLogo(true);
+                              }}
+                              onError={(err) => {
+                                console.error("ImageKit Upload Error:", err);
+                                setIsUploadingLogo(false);
+                                toast.error("Failed to upload logo.");
+                              }}
+                              onSuccess={async (res) => {
+                                setIsUploadingLogo(false);
+                                setLogoPreview(res.url); // Set the live URL
+
+                                // ADDED: Auto-save directly to the database!
                                 try {
                                   await updateProfileOnApi({
                                     ...clinic,
-                                    logo: null, // Clear it in the DB
+                                    logo: res.url,
                                   });
-                                  toast.info("Logo removed.");
+                                  toast.success("Logo saved successfully!");
                                 } catch (err) {
-                                  toast.error("Failed to remove logo.");
+                                  console.error(
+                                    "Failed to save logo to DB:",
+                                    err,
+                                  );
+                                  toast.error(
+                                    "Logo uploaded, but failed to save to database.",
+                                  );
                                 }
                               }}
-                              className="ml-3 text-sm text-danger hover:underline"
-                            >
-                              Remove
-                            </button>
+                            />
+                          </IKContext>
+                        </div>
+                      </div>
+
+                      {[
+                        {
+                          name: "name",
+                          label: "Clinic Name",
+                          placeholder: "HealthFirst Clinic",
+                        },
+                        {
+                          name: "website",
+                          label: "Website URL",
+                          placeholder: "https://yourclinic.com",
+                        },
+                      ].map(({ name, label, placeholder }) => (
+                        <div key={name}>
+                          <label className="text-xs font-medium text-text-secondary block mb-1.5">
+                            {label}
+                          </label>
+                          <input
+                            {...generalForm.register(name)}
+                            placeholder={placeholder}
+                            className="w-full h-10 px-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary"
+                          />
+                          {generalForm.formState.errors[name] && (
+                            <p className="mt-1 text-xs text-danger">
+                              {generalForm.formState.errors[name].message}
+                            </p>
                           )}
+                        </div>
+                      ))}
+
+                      <div>
+                        <label className="text-xs font-medium text-text-secondary block mb-1.5">
+                          About / Description
+                        </label>
+                        <textarea
+                          {...generalForm.register("description")}
+                          rows={4}
+                          placeholder="A modern primary care clinic serving our community..."
+                          className="w-full px-3 py-2 text-sm border border-border rounded-md bg-surface resize-none focus:outline-none focus:border-primary"
+                        />
+                        <p className="text-xs text-text-muted mt-1">
+                          This is used by your AI to describe your clinic to
+                          patients.
+                        </p>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={saving || !generalForm.formState.isDirty} // Simplified!
+                          className="h-9 px-5 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
+                        >
+                          {saving ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            "Save Changes"
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Working Hours */}
+                  {section === "Working Hours" && (
+                    <div className="bg-surface border border-border rounded-md p-6">
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                          <h2 className="text-h4 text-text-primary">
+                            Working Hours
+                          </h2>
                           <p className="text-xs text-text-muted mt-0.5">
-                            PNG, JPG up to 2MB. Shown in chatbot widget.
+                            Managed in a dedicated command center for advanced
+                            schedules.
                           </p>
                         </div>
+                        <Link
+                          to="/working-hours"
+                          className="h-8 px-3 inline-flex items-center rounded-md bg-primary text-primary-on text-xs font-semibold hover:bg-primary-hover transition-colors"
+                        >
+                          Open Manager
+                        </Link>
+                      </div>
 
-                        {/* Hidden ImageKit Input */}
-                        <IKUpload
-                          style={{ display: "none" }}
-                          ref={fileRef} // Make sure this is ref, not inputRef based on your version
-                          accept="image/*"
-                          onChange={(e) => {
-                            if (e.target.files.length > 0)
-                              setIsUploadingLogo(true);
-                          }}
-                          onError={(err) => {
-                            console.error("ImageKit Upload Error:", err);
-                            setIsUploadingLogo(false);
-                            toast.error("Failed to upload logo.");
-                          }}
-                          onSuccess={async (res) => {
-                            setIsUploadingLogo(false);
-                            setLogoPreview(res.url); // Set the live URL
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="border border-border rounded-md p-4 bg-surface-secondary">
+                          <p className="text-xs text-text-muted">Timezone</p>
+                          <p className="text-sm font-semibold text-text-primary mt-1">
+                            {workingHours.timezone}
+                          </p>
+                        </div>
+                        <div className="border border-border rounded-md p-4 bg-surface-secondary">
+                          <p className="text-xs text-text-muted">Open Days</p>
+                          <p className="text-sm font-semibold text-text-primary mt-1">
+                            {coverage.openDays} / 7
+                          </p>
+                        </div>
+                        <div className="border border-border rounded-md p-4 bg-surface-secondary">
+                          <p className="text-xs text-text-muted">
+                            Weekly Open Time
+                          </p>
+                          <p className="text-sm font-semibold text-text-primary mt-1">
+                            {coverage.weeklyOpenLabel}
+                          </p>
+                        </div>
+                        <div className="border border-border rounded-md p-4 bg-surface-secondary">
+                          <p className="text-xs text-text-muted">
+                            Upcoming Override
+                          </p>
+                          <p className="text-sm font-semibold text-text-primary mt-1">
+                            {nextOverride
+                              ? `${nextOverride.date} (${nextOverride.type === "closed" ? "Closed" : "Custom"})`
+                              : "No upcoming overrides"}
+                          </p>
+                        </div>
+                      </div>
 
-                            // ADDED: Auto-save directly to the database!
-                            try {
-                              await updateProfileOnApi({
-                                ...clinic,
-                                logo: res.url,
-                              });
-                              toast.success("Logo saved successfully!");
-                            } catch (err) {
-                              console.error("Failed to save logo to DB:", err);
-                              toast.error(
-                                "Logo uploaded, but failed to save to database.",
-                              );
-                            }
-                          }}
-                        />
-                      </IKContext>
-                    </div>
-                  </div>
-
-                  {[
-                    {
-                      name: "name",
-                      label: "Clinic Name",
-                      placeholder: "HealthFirst Clinic",
-                    },
-                    {
-                      name: "website",
-                      label: "Website URL",
-                      placeholder: "https://yourclinic.com",
-                    },
-                  ].map(({ name, label, placeholder }) => (
-                    <div key={name}>
-                      <label className="text-xs font-medium text-text-secondary block mb-1.5">
-                        {label}
-                      </label>
-                      <input
-                        {...generalForm.register(name)}
-                        placeholder={placeholder}
-                        className="w-full h-10 px-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary"
-                      />
-                      {generalForm.formState.errors[name] && (
-                        <p className="mt-1 text-xs text-danger">
-                          {generalForm.formState.errors[name].message}
-                        </p>
+                      {coverage.warnings.length > 0 && (
+                        <div className="mt-3 p-3 border border-warning/40 bg-warning-light rounded-md">
+                          <p className="text-xs font-semibold text-text-primary mb-1">
+                            Warnings
+                          </p>
+                          <ul className="text-xs text-text-secondary list-disc pl-4 space-y-0.5">
+                            {coverage.warnings.map((warning) => (
+                              <li key={warning}>{warning}</li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
-                    </div>
-                  ))}
 
-                  <div>
-                    <label className="text-xs font-medium text-text-secondary block mb-1.5">
-                      About / Description
-                    </label>
-                    <textarea
-                      {...generalForm.register("description")}
-                      rows={4}
-                      placeholder="A modern primary care clinic serving our community..."
-                      className="w-full px-3 py-2 text-sm border border-border rounded-md bg-surface resize-none focus:outline-none focus:border-primary"
-                    />
-                    <p className="text-xs text-text-muted mt-1">
-                      This is used by your AI to describe your clinic to
-                      patients.
-                    </p>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={saving || !generalForm.formState.isDirty} // Simplified!
-                      className="h-9 px-5 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Changes"
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Working Hours */}
-              {section === "Working Hours" && (
-                <div className="bg-surface border border-border rounded-md p-6">
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <div>
-                      <h2 className="text-h4 text-text-primary">
-                        Working Hours
-                      </h2>
-                      <p className="text-xs text-text-muted mt-0.5">
-                        Managed in a dedicated command center for advanced
-                        schedules.
-                      </p>
-                    </div>
-                    <Link
-                      to="/working-hours"
-                      className="h-8 px-3 inline-flex items-center rounded-md bg-primary text-primary-on text-xs font-semibold hover:bg-primary-hover transition-colors"
-                    >
-                      Open Manager
-                    </Link>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="border border-border rounded-md p-4 bg-surface-secondary">
-                      <p className="text-xs text-text-muted">Timezone</p>
-                      <p className="text-sm font-semibold text-text-primary mt-1">
-                        {workingHours.timezone}
-                      </p>
-                    </div>
-                    <div className="border border-border rounded-md p-4 bg-surface-secondary">
-                      <p className="text-xs text-text-muted">Open Days</p>
-                      <p className="text-sm font-semibold text-text-primary mt-1">
-                        {coverage.openDays} / 7
-                      </p>
-                    </div>
-                    <div className="border border-border rounded-md p-4 bg-surface-secondary">
-                      <p className="text-xs text-text-muted">
-                        Weekly Open Time
-                      </p>
-                      <p className="text-sm font-semibold text-text-primary mt-1">
-                        {coverage.weeklyOpenLabel}
-                      </p>
-                    </div>
-                    <div className="border border-border rounded-md p-4 bg-surface-secondary">
-                      <p className="text-xs text-text-muted">
-                        Upcoming Override
-                      </p>
-                      <p className="text-sm font-semibold text-text-primary mt-1">
-                        {nextOverride
-                          ? `${nextOverride.date} (${nextOverride.type === "closed" ? "Closed" : "Custom"})`
-                          : "No upcoming overrides"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {coverage.warnings.length > 0 && (
-                    <div className="mt-3 p-3 border border-warning/40 bg-warning-light rounded-md">
-                      <p className="text-xs font-semibold text-text-primary mb-1">
-                        Warnings
-                      </p>
-                      <ul className="text-xs text-text-secondary list-disc pl-4 space-y-0.5">
-                        {coverage.warnings.map((warning) => (
-                          <li key={warning}>{warning}</li>
-                        ))}
-                      </ul>
+                      <div className="mt-4">
+                        <Link
+                          to="/working-hours"
+                          className="h-9 px-4 inline-flex items-center rounded-md border border-border text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
+                        >
+                          Configure detailed schedule
+                        </Link>
+                      </div>
                     </div>
                   )}
 
-                  <div className="mt-4">
-                    <Link
-                      to="/working-hours"
-                      className="h-9 px-4 inline-flex items-center rounded-md border border-border text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
-                    >
-                      Configure detailed schedule
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Services */}
-              {section === "Services" && (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAddServiceWithSave();
-                  }}
-                  className="bg-surface border border-border rounded-md p-6 space-y-4"
-                >
-                  <div>
-                    <h2 className="text-h4 text-text-primary mb-1">Services</h2>
-                    <p className="text-xs text-text-muted">
-                      These appear in the chatbot's service selection step. Drag
-                      to reorder.
-                    </p>
-                  </div>
-
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleServiceDragEnd}
-                  >
-                    <SortableContext
-                      items={services}
-                      strategy={rectSortingStrategy}
-                    >
-                      <div className="flex flex-wrap gap-2">
-                        {services.map((s) => (
-                          <ServiceTag
-                            key={s}
-                            service={s}
-                            onRemove={handleRemoveServiceWithSave}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-
-                  <div>
-                    <label className="text-xs font-medium text-text-secondary block mb-1.5">
-                      Add New Service
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        value={newService}
-                        onChange={(e) => setNewService(e.target.value)}
-                        onKeyDown={handleAddService}
-                        placeholder="Enter service name"
-                        disabled={saving}
-                        className="flex-1 h-9 px-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary disabled:opacity-60"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newService.trim() || saving}
-                        className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
-                      >
-                        {saving ? (
-                          <>
-                            <Loader2 size={14} className="animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Plus size={14} />
-                            Add Service
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              )}
-
-              {/* Contact & Location */}
-              {section === "Contact & Location" && (
-                <form
-                  onSubmit={contactForm.handleSubmit(saveContact)}
-                  className="bg-surface border border-border rounded-md p-6 space-y-4"
-                >
-                  <h2 className="text-h4 text-text-primary">
-                    Contact & Location
-                  </h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      {
-                        name: "address",
-                        label: "Street Address",
-                        placeholder: "123 Medical Drive",
-                      },
-                      {
-                        name: "city",
-                        label: "City",
-                        placeholder: "San Francisco",
-                      },
-                      {
-                        name: "postalCode",
-                        label: "Postal Code",
-                        placeholder: "94102",
-                      },
-                      {
-                        name: "phone",
-                        label: "Phone",
-                        placeholder: "+1 (415) 555-0000",
-                      },
-                    ].map(({ name, label, placeholder }) => (
-                      <div key={name}>
-                        <label className="text-xs font-medium text-text-secondary block mb-1.5">
-                          {label}
-                        </label>
-                        <input
-                          {...contactForm.register(name)}
-                          placeholder={placeholder}
-                          className="w-full h-10 px-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary"
-                        />
-                        {contactForm.formState.errors[name] && (
-                          <p className="mt-1 text-xs text-danger">
-                            {contactForm.formState.errors[name].message}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                    <div className="col-span-2">
-                      <label className="text-xs font-medium text-text-secondary block mb-1.5">
-                        Email (read-only)
-                      </label>
-                      <input
-                        disabled={true}
-                        value={user?.email}
-                        type="email"
-                        className="w-full h-10 px-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={saving || !contactForm.formState.isDirty}
-                      className="h-9 px-5 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Contact Info"
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Danger Zone */}
-              {section === "Danger Zone" && (
-                <div className="border-2 border-danger/30 rounded-md p-6 space-y-4 bg-danger-light/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle size={18} className="text-danger" />
-                    <h2 className="text-h4 text-danger">Danger Zone</h2>
-                  </div>
-                  <p className="text-sm text-text-secondary">
-                    These actions are permanent and cannot be undone.
-                  </p>
-
-                  {[
-                    {
-                      label: "Reset all FAQs",
-                      desc: "Deletes all FAQ entries permanently.",
-                      onClick: () => setResetOpen(true),
-                      btn: "Reset FAQs",
-                    },
-                    {
-                      label: "Delete Clinic Account",
-                      desc: "Permanently deletes your account and all data.",
-                      onClick: () => setDeleteOpen(true),
-                      btn: "Delete Account",
-                    },
-                  ].map(({ label, desc, onClick, btn }) => (
-                    <div
-                      key={label}
-                      className="flex items-center justify-between p-4 bg-surface border border-danger/20 rounded-md"
+                  {/* Services */}
+                  {section === "Services" && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleAddServiceWithSave();
+                      }}
+                      className="bg-surface border border-border rounded-md p-6 space-y-4"
                     >
                       <div>
-                        <p className="text-sm font-semibold text-text-primary">
-                          {label}
+                        <h2 className="text-h4 text-text-primary mb-1">
+                          Services
+                        </h2>
+                        <p className="text-xs text-text-muted">
+                          These appear in the chatbot's service selection step.
+                          Drag to reorder.
                         </p>
-                        <p className="text-xs text-text-muted mt-0.5">{desc}</p>
                       </div>
-                      <button
-                        onClick={onClick}
-                        className="h-9 px-4 text-sm font-semibold border-2 border-danger text-danger rounded-md hover:bg-danger hover:text-white transition-colors"
-                      >
-                        {btn}
-                      </button>
-                    </div>
-                  ))}
 
-                  <div className="p-4 bg-surface border border-border rounded-md">
-                    <p className="text-sm font-semibold text-text-primary">
-                      Download all data
-                    </p>
-                    <p className="text-xs text-text-muted mt-0.5 mb-3">
-                      Export all your clinic data (GDPR compliant).
-                    </p>
-                    <button className="h-8 px-4 text-xs font-medium border border-border rounded-md hover:bg-surface-secondary text-text-secondary transition-colors">
-                      Export Data (.zip)
-                    </button>
-                  </div>
-                </div>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleServiceDragEnd}
+                      >
+                        <SortableContext
+                          items={services}
+                          strategy={rectSortingStrategy}
+                        >
+                          <div className="flex flex-wrap gap-2">
+                            {services.map((s) => (
+                              <ServiceTag
+                                key={s}
+                                service={s}
+                                onRemove={handleRemoveServiceWithSave}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+
+                      <div>
+                        <label className="text-xs font-medium text-text-secondary block mb-1.5">
+                          Add New Service
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            value={newService}
+                            onChange={(e) => setNewService(e.target.value)}
+                            onKeyDown={handleAddService}
+                            placeholder="Enter service name"
+                            disabled={saving}
+                            className="flex-1 h-9 px-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary disabled:opacity-60"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!newService.trim() || saving}
+                            className="h-9 px-4 text-sm font-semibold bg-primary text-primary-on rounded-md hover:bg-primary-hover disabled:opacity-60 flex items-center gap-2 transition-colors"
+                          >
+                            {saving ? (
+                              <>
+                                <Loader2 size={14} className="animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Plus size={14} />
+                                Add Service
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Contact & Location */}
+                  {section === "Contact & Location" && (
+                    <form
+                      onSubmit={contactForm.handleSubmit(saveContact)}
+                      className="bg-surface border border-border rounded-md p-6 space-y-4"
+                    >
+                      <h2 className="text-h4 text-text-primary">
+                        Contact & Location
+                      </h2>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          {
+                            name: "address",
+                            label: "Street Address",
+                            placeholder: "123 Medical Drive",
+                          },
+                          {
+                            name: "city",
+                            label: "City",
+                            placeholder: "San Francisco",
+                          },
+                          {
+                            name: "postalCode",
+                            label: "Postal Code",
+                            placeholder: "94102",
+                          },
+                          {
+                            name: "phone",
+                            label: "Phone",
+                            placeholder: "+1 (415) 555-0000",
+                          },
+                        ].map(({ name, label, placeholder }) => (
+                          <div key={name}>
+                            <label className="text-xs font-medium text-text-secondary block mb-1.5">
+                              {label}
+                            </label>
+                            <input
+                              {...contactForm.register(name)}
+                              placeholder={placeholder}
+                              className="w-full h-10 px-3 text-sm border border-border rounded-md bg-surface focus:outline-none focus:border-primary"
+                            />
+                            {contactForm.formState.errors[name] && (
+                              <p className="mt-1 text-xs text-danger">
+                                {contactForm.formState.errors[name].message}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                        <div className="col-span-2">
+                          <label className="text-xs font-medium text-text-secondary block mb-1.5">
+                            Email (read-only)
+                          </label>
+                          <input
+                            // DO NOT use {...contactForm.register("email")} here
+                            value={user?.email || ""}
+                            disabled={true}
+                            readOnly={true}
+                            type="email"
+                            className="w-full h-10 px-3 text-sm border border-border rounded-md bg-surface-secondary cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={saving} // Remove isDirty check temporarily to test
+                          className={cn(
+                            "h-9 px-5 text-sm font-semibold rounded-md flex items-center gap-2 transition-colors",
+                            saving || !contactForm.formState.isDirty
+                              ? "bg-gray-500 cursor-not-allowed"
+                              : "bg-primary text-primary-on hover:bg-primary-hover",
+                          )}
+                        >
+                          {saving ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            "Save Contact Info"
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Danger Zone */}
+                  {section === "Danger Zone" && (
+                    <div className="border-2 border-danger/30 rounded-md p-6 space-y-4 bg-danger-light/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle size={18} className="text-danger" />
+                        <h2 className="text-h4 text-danger">Danger Zone</h2>
+                      </div>
+                      <p className="text-sm text-text-secondary">
+                        These actions are permanent and cannot be undone.
+                      </p>
+
+                      {[
+                        {
+                          label: "Reset all FAQs",
+                          desc: "Deletes all FAQ entries permanently.",
+                          onClick: () => setResetOpen(true),
+                          btn: "Reset FAQs",
+                        },
+                        {
+                          label: "Delete Clinic Account",
+                          desc: "Permanently deletes your account and all data.",
+                          onClick: () => setDeleteOpen(true),
+                          btn: "Delete Account",
+                        },
+                      ].map(({ label, desc, onClick, btn }) => (
+                        <div
+                          key={label}
+                          className="flex items-center justify-between p-4 bg-surface border border-danger/20 rounded-md"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-text-primary">
+                              {label}
+                            </p>
+                            <p className="text-xs text-text-muted mt-0.5">
+                              {desc}
+                            </p>
+                          </div>
+                          <button
+                            onClick={onClick}
+                            className="h-9 px-4 text-sm font-semibold border-2 border-danger text-danger rounded-md hover:bg-danger hover:text-white transition-colors"
+                          >
+                            {btn}
+                          </button>
+                        </div>
+                      ))}
+
+                      <div className="p-4 bg-surface border border-border rounded-md">
+                        <p className="text-sm font-semibold text-text-primary">
+                          Download all data
+                        </p>
+                        <p className="text-xs text-text-muted mt-0.5 mb-3">
+                          Export all your clinic data (GDPR compliant).
+                        </p>
+                        <button className="h-8 px-4 text-xs font-medium border border-border rounded-md hover:bg-surface-secondary text-text-secondary transition-colors">
+                          Export Data (.zip)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
             </motion.div>
           </AnimatePresence>
         </div>
