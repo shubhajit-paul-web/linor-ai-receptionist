@@ -58,7 +58,12 @@ const useAuthStore = create(
           });
           return response.data.apiKey;
         } catch (error) {
-          set({ isAuthenticated: false, user: null, token: null, apiKey: null });
+          set({
+            isAuthenticated: false,
+            user: null,
+            token: null,
+            apiKey: null,
+          });
           throw error;
         }
       },
@@ -71,6 +76,16 @@ const useAuthStore = create(
         } finally {
           set({ user: null, apiKey: null, isAuthenticated: false });
         }
+      },
+
+      // Add this right below your existing logout function:
+      setOAuthData: (user, token, apiKey) => {
+        set({
+          user,
+          token,
+          apiKey: apiKey || get().apiKey, // keep existing or set new
+          isAuthenticated: true,
+        });
       },
 
       // Generate a local API key (for initialization only)

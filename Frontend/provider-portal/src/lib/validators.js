@@ -55,7 +55,6 @@ export const clinicContactSchema = z.object({
   city:       z.string().min(2).max(80),
   postalCode: z.string().min(3).max(12),
   phone:      z.string().min(7).max(20),
-  email:      z.string().email(),
 });
 
 // ─── Widget Settings Schema ──────────────────────────────────────────────────

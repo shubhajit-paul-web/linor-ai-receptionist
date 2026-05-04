@@ -6,6 +6,8 @@
  * Production: Uses environment variables with full URLs
  */
 
+import useAuthStore from '../store/useAuthStore';
+
 /**
  * Helper to build API URL based on environment
  */
@@ -35,14 +37,23 @@ const getApiUrl = (service) => {
 
 const apiClient = async (service, endpoint, options = {}) => {
   const baseUrl = getApiUrl(service);
+  const token = useAuthStore.getState().token; // Get token synchronously from Zustand
+  
   try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...options.headers,
+    };
+
+    // Add Authorization header if token exists
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${baseUrl}${endpoint}`, {
       credentials: "include", // Send cookies with requests (JWT token)
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
+      headers,
     });
 
     // Read response as text first to handle empty bodies

@@ -21,6 +21,9 @@
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
 
+  // Normalize attrs to an empty object if null/undefined
+  attrs = attrs || {};
+
   for (const [key, val] of Object.entries(attrs)) {
     if (val == null) continue;
 

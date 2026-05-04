@@ -13,6 +13,7 @@ import useUIStore from './store/useUIStore';
 
 const Login        = lazy(() => import('./pages/Login'));
 const Register     = lazy(() => import('./pages/Register'));
+const OAuthSuccess = lazy(() => import('./pages/OAuthSuccess'));
 const Dashboard    = lazy(() => import('./pages/Dashboard'));
 const Appointments = lazy(() => import('./pages/Appointments'));
 const ChatLogs     = lazy(() => import('./pages/ChatLogs'));
@@ -61,6 +62,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/login',    element: <Suspense fallback={<PageLoader />}><Login /></Suspense> },
       { path: '/register', element: <Suspense fallback={<PageLoader />}><Register /></Suspense> },
+      { path: '/oauth-success', element: <Suspense fallback={<PageLoader />}><OAuthSuccess /></Suspense> },
     ],
   },
   {

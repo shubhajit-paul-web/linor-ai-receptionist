@@ -1,36 +1,42 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Eye, EyeOff, CheckCircle, Check, Copy } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import useAuthStore from '../store/useAuthStore';
-import useClinicStore from '../store/useClinicStore';
-import { registerStep1Schema, registerStep2Schema } from '../lib/validators';
-import { maskApiKey, copyToClipboard, cn } from '../lib/utils';
-import heroLogo from '../assets/hero.png';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Eye, EyeOff, CheckCircle, Check, Copy } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import useAuthStore from "../store/useAuthStore";
+import useClinicStore from "../store/useClinicStore";
+import { registerStep1Schema, registerStep2Schema } from "../lib/validators";
+import { maskApiKey, copyToClipboard, cn } from "../lib/utils";
+import heroLogo from "../assets/hero.png";
 
-function FormInput({ label, error, type = 'text', registration, ...props }) {
+function FormInput({ label, error, type = "text", registration, ...props }) {
   const [showPw, setShowPw] = useState(false);
-  const isPassword = type === 'password';
+  const isPassword = type === "password";
   return (
     <div>
-      <label className="block text-xs font-medium text-text-secondary mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-text-secondary mb-1.5">
+        {label}
+      </label>
       <div className="relative">
         <input
-          type={isPassword ? (showPw ? 'text' : 'password') : type}
+          type={isPassword ? (showPw ? "text" : "password") : type}
           {...registration}
           {...props}
           className={cn(
-            'w-full h-10 px-3 text-sm rounded-md border',
-            'bg-surface text-text-primary placeholder:text-text-muted',
-            'focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors duration-150',
-            error ? 'border-danger' : 'border-border focus:border-primary'
+            "w-full h-10 px-3 text-sm rounded-md border",
+            "bg-surface text-text-primary placeholder:text-text-muted",
+            "focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors duration-150",
+            error ? "border-danger" : "border-border focus:border-primary",
           )}
         />
         {isPassword && (
-          <button type="button" onClick={() => setShowPw((v) => !v)} tabIndex={-1}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted">
+          <button
+            type="button"
+            onClick={() => setShowPw((v) => !v)}
+            tabIndex={-1}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
+          >
             {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         )}
@@ -46,16 +52,25 @@ function StepDots({ step }) {
     <div className="flex items-center gap-2 mb-8">
       {[1, 2, 3].map((n) => (
         <div key={n} className="flex items-center gap-2">
-          <div className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-all duration-200',
-            step > n ? 'bg-primary border-primary text-primary-on'
-              : step === n ? 'border-primary text-primary'
-                : 'border-border text-text-muted'
-          )}>
+          <div
+            className={cn(
+              "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-all duration-200",
+              step > n
+                ? "bg-primary border-primary text-primary-on"
+                : step === n
+                  ? "border-primary text-primary"
+                  : "border-border text-text-muted",
+            )}
+          >
             {step > n ? <Check size={12} /> : n}
           </div>
           {n < 3 && (
-            <div className={cn('w-8 h-0.5 transition-colors duration-300', step > n ? 'bg-primary' : 'bg-border')} />
+            <div
+              className={cn(
+                "w-8 h-0.5 transition-colors duration-300",
+                step > n ? "bg-primary" : "bg-border",
+              )}
+            />
           )}
         </div>
       ))}
@@ -65,9 +80,9 @@ function StepDots({ step }) {
 }
 
 const FEATURES = [
-  '24/7 appointment booking via chatbot',
-  'Full control over FAQs and AI responses',
-  'Real-time analytics and chat logs',
+  "24/7 appointment booking via chatbot",
+  "Full control over FAQs and AI responses",
+  "Real-time analytics and chat logs",
 ];
 
 export default function Register() {
@@ -76,22 +91,22 @@ export default function Register() {
   const updateClinic = useClinicStore((s) => s.updateClinic);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState("");
   const [copied, setCopied] = useState(false);
   const [step1Data, setStep1Data] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const step1Form = useForm({ resolver: zodResolver(registerStep1Schema) });
   const step2Form = useForm({ resolver: zodResolver(registerStep2Schema) });
 
   const handleStep1 = async (data) => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       setStep1Data(data);
       setStep(2);
     } catch (err) {
-      setError(err.message || 'Failed to proceed. Please try again.');
+      setError(err.message || "Failed to proceed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -99,24 +114,24 @@ export default function Register() {
 
   const handleStep2 = async (step2FormData) => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const registrationData = {
         ...step1Data,
         password: step2FormData.password,
       };
       const key = await register(registrationData);
-      updateClinic({ 
-        name: step1Data.clinicName, 
-        email: step1Data.email, 
-        phone: step1Data.phone, 
-        address: step1Data.address 
+      updateClinic({
+        name: step1Data.clinicName,
+        email: step1Data.email,
+        phone: step1Data.phone,
+        address: step1Data.address,
       });
       setApiKey(key);
       setStep(3);
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
-      console.error('Registration error:', err);
+      setError(err.message || "Registration failed. Please try again.");
+      console.error("Registration error:", err);
     } finally {
       setLoading(false);
     }
@@ -134,12 +149,18 @@ export default function Register() {
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-surface">
         <div className="w-full max-w-[420px]">
           <div className="flex items-center gap-2.5 mb-10">
-            <img src={heroLogo} alt="Linor Logo" className="w-8 h-8 object-contain rounded-md" />
+            <img
+              src={heroLogo}
+              alt="Linor Logo"
+              className="w-8 h-8 object-contain rounded-md"
+            />
             <span className="text-lg font-bold text-text-primary">Linor</span>
           </div>
 
           <h1 className="text-h2 text-text-primary mb-1">Create your clinic</h1>
-          <p className="text-sm text-text-secondary mb-6">Set up your AI receptionist in minutes</p>
+          <p className="text-sm text-text-secondary mb-6">
+            Set up your AI receptionist in minutes
+          </p>
 
           <StepDots step={step} />
 
@@ -162,21 +183,44 @@ export default function Register() {
                 noValidate
                 className="space-y-4"
               >
-                <FormInput label="Clinic name" placeholder="HealthFirst Clinic"
-                  registration={step1Form.register('clinicName')}
-                  error={step1Form.formState.errors.clinicName?.message} />
-                <FormInput label="Address" placeholder="123 Medical Drive, San Francisco"
-                  registration={step1Form.register('address')}
-                  error={step1Form.formState.errors.address?.message} />
-                <FormInput label="Phone number" type="tel" placeholder="+1 (555) 000-0000"
-                  registration={step1Form.register('phone')}
-                  error={step1Form.formState.errors.phone?.message} />
-                <FormInput label="Clinic email" type="email" placeholder="hello@yourclinic.com"
-                  registration={step1Form.register('email')}
-                  error={step1Form.formState.errors.email?.message} />
-                <button type="submit" disabled={loading}
-                  className="w-full h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70">
-                  {loading ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : 'Continue →'}
+                <FormInput
+                  label="Clinic name"
+                  placeholder="HealthFirst Clinic"
+                  registration={step1Form.register("clinicName")}
+                  error={step1Form.formState.errors.clinicName?.message}
+                />
+                <FormInput
+                  label="Address"
+                  placeholder="123 Medical Drive, San Francisco"
+                  registration={step1Form.register("address")}
+                  error={step1Form.formState.errors.address?.message}
+                />
+                <FormInput
+                  label="Phone number"
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  registration={step1Form.register("phone")}
+                  error={step1Form.formState.errors.phone?.message}
+                />
+                <FormInput
+                  label="Clinic email"
+                  type="email"
+                  placeholder="hello@yourclinic.com"
+                  registration={step1Form.register("email")}
+                  error={step1Form.formState.errors.email?.message}
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    "Continue →"
+                  )}
                 </button>
               </motion.form>
             )}
@@ -193,20 +237,41 @@ export default function Register() {
                 noValidate
                 className="space-y-4"
               >
-                <FormInput label="Password" type="password" placeholder="At least 8 characters"
-                  registration={step2Form.register('password')}
-                  error={step2Form.formState.errors.password?.message} />
-                <FormInput label="Confirm password" type="password" placeholder="Repeat your password"
-                  registration={step2Form.register('confirmPassword')}
-                  error={step2Form.formState.errors.confirmPassword?.message} />
+                <FormInput
+                  label="Password"
+                  type="password"
+                  placeholder="At least 8 characters"
+                  registration={step2Form.register("password")}
+                  error={step2Form.formState.errors.password?.message}
+                />
+                <FormInput
+                  label="Confirm password"
+                  type="password"
+                  placeholder="Repeat your password"
+                  registration={step2Form.register("confirmPassword")}
+                  error={step2Form.formState.errors.confirmPassword?.message}
+                />
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setStep(1)}
-                    className="flex-1 h-10 rounded-md text-sm font-medium border border-border hover:bg-surface-secondary text-text-secondary transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 h-10 rounded-md text-sm font-medium border border-border hover:bg-surface-secondary text-text-secondary transition-colors"
+                  >
                     Back
                   </button>
-                  <button type="submit" disabled={loading}
-                    className="flex-1 h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70">
-                    {loading ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : 'Create Account'}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />{" "}
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
                   </button>
                 </div>
               </motion.form>
@@ -224,24 +289,50 @@ export default function Register() {
                 <div className="w-14 h-14 rounded-full bg-success-light flex items-center justify-center mx-auto mb-4">
                   <CheckCircle size={28} className="text-success" />
                 </div>
-                <h2 className="text-h3 text-text-primary mb-1">You're all set!</h2>
-                <p className="text-sm text-text-muted mb-6">Here's your API key — keep it safe.</p>
+                <h2 className="text-h3 text-text-primary mb-1">
+                  You're all set!
+                </h2>
+                <p className="text-sm text-text-muted mb-6">
+                  Here's your API key — keep it safe.
+                </p>
 
                 <div className="bg-surface-secondary border border-border rounded-md p-4 mb-3 text-left">
-                  <p className="text-label uppercase text-text-muted mb-2">Your API Key</p>
+                  <p className="text-label uppercase text-text-muted mb-2">
+                    Your API Key
+                  </p>
                   <div className="flex items-center gap-2">
-                    <code className="mono flex-1 text-text-primary truncate">{maskApiKey(apiKey)}</code>
-                    <button onClick={handleCopy}
-                      className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                        copied ? 'bg-success-light text-success' : 'bg-primary-light text-primary hover:bg-primary/20')}>
-                      {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy</>}
+                    <code className="mono flex-1 text-text-primary truncate">
+                      {maskApiKey(apiKey)}
+                    </code>
+                    <button
+                      onClick={handleCopy}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                        copied
+                          ? "bg-success-light text-success"
+                          : "bg-primary-light text-primary hover:bg-primary/20",
+                      )}
+                    >
+                      {copied ? (
+                        <>
+                          <Check size={12} /> Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={12} /> Copy
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-text-muted mb-6">You can always find this in API & Security settings.</p>
+                <p className="text-xs text-text-muted mb-6">
+                  You can always find this in API & Security settings.
+                </p>
 
-                <button onClick={() => navigate('/dashboard')}
-                  className="w-full h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors">
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="w-full h-10 rounded-md text-sm font-semibold text-primary-on bg-primary hover:bg-primary-hover transition-colors"
+                >
                   Go to Dashboard →
                 </button>
               </motion.div>
@@ -250,10 +341,58 @@ export default function Register() {
 
           {step < 3 && (
             <p className="mt-6 text-center text-sm text-text-secondary">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-primary font-medium hover:underline"
+              >
+                Sign in
+              </Link>
             </p>
           )}
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-surface px-2 text-text-muted">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                // Directs the browser to your backend Passport trigger route
+                window.location.href = "http://localhost:5000/api/auth/google";
+              }}
+              className="mt-4 w-full h-10 rounded-md text-sm font-semibold border border-border bg-surface hover:bg-surface-secondary text-text-primary transition-colors flex items-center justify-center gap-2"
+            >
+              {/* Simple Google SVG Icon */}
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              Sign Up with Google
+            </button>
+          </div>
         </div>
       </div>
 
@@ -261,18 +400,26 @@ export default function Register() {
       <div className="hidden lg:flex w-[40%] login-gradient flex-col items-center justify-center p-12 text-white">
         <div className="max-w-xs">
           <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-8">
-            <img src={heroLogo} alt="Linor Logo" className="w-10 h-10 object-contain rounded-lg" />
+            <img
+              src={heroLogo}
+              alt="Linor Logo"
+              className="w-10 h-10 object-contain rounded-lg"
+            />
           </div>
           <h2 className="text-3xl font-bold mb-3 leading-tight">
             Your clinic's AI receptionist, always on.
           </h2>
           <p className="text-white/70 text-sm mb-8 leading-relaxed">
-            Let AI handle appointment booking and FAQs while your team focuses on patient care.
+            Let AI handle appointment booking and FAQs while your team focuses
+            on patient care.
           </p>
           <div className="space-y-3">
             {FEATURES.map((f) => (
               <div key={f} className="flex items-start gap-3">
-                <CheckCircle size={18} className="text-white/80 flex-shrink-0 mt-0.5" />
+                <CheckCircle
+                  size={18}
+                  className="text-white/80 flex-shrink-0 mt-0.5"
+                />
                 <span className="text-sm text-white/90">{f}</span>
               </div>
             ))}
