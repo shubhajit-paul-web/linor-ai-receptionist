@@ -7,7 +7,7 @@ const {
   getChatSessions,
   requestTransfer,
 } = require("../controllers/chat.controller");
-const { verifyApiKey } = require("../middlewares/apiKey.middleware.js");
+const { verifyApiKey } = require("../middlewares/apikey.middleware.js");
 
 // All chat routes protected by API key
 router.post("/", verifyApiKey, chat);
