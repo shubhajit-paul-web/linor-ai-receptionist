@@ -49,16 +49,10 @@ server.listen(PORT, () => {
   logger.info("Chat service listening on port %d  [%s]", PORT, process.env.NODE_ENV || "development");
 });
 
-// ── Graceful shutdown — close MongoDB + Redis + server cleanly ────
+// ── Graceful shutdown — close Redis + server cleanly ────
 const shutdown = async (signal) => {
   logger.info("%s received. Shutting down gracefully...", signal);
   server.close(async () => {
-    try {
-      await require("mongoose").connection.close();
-      logger.info("MongoDB connection closed");
-    } catch (err) {
-      logger.error("MongoDB close error: %s", err.message);
-    }
     try {
       await redis.quit(); // close Redis connection cleanly
       logger.info("Redis connection closed");

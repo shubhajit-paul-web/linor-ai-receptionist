@@ -7,7 +7,6 @@
  */
 
 const logger = require("../utils/logger");
-const ChatSession = require("../model/chat.model");
 
 exports.setupChatSockets = (io) => {
   io.on("connection", (socket) => {
@@ -43,16 +42,6 @@ exports.setupChatSockets = (io) => {
       socket.data.role = "agent";
       socket.data.agentName = agentName || "Support Agent";
 
-      // Update DB: mark agent joined
-      try {
-        await ChatSession.findOneAndUpdate(
-          { sessionId, tenantId },
-          { agentJoinedAt: new Date() }
-        );
-      } catch (err) {
-        logger.warn("Could not update agent join time: %s", err.message);
-      }
-
       // Notify patient
       io.to(`session:${sessionId}`).emit("agent-joined", {
         agentName: socket.data.agentName,
@@ -73,16 +62,6 @@ exports.setupChatSockets = (io) => {
         content: content.trim(),
         timestamp: new Date(),
       };
-
-      // Save to DB
-      try {
-        await ChatSession.findOneAndUpdate(
-          { sessionId },
-          { $push: { messages: msg } }
-        );
-      } catch (err) {
-        logger.warn("Could not save agent message: %s", err.message);
-      }
 
       // Broadcast to the session room (patient + any other agents)
       io.to(`session:${sessionId}`).emit("new-message", {
@@ -105,16 +84,6 @@ exports.setupChatSockets = (io) => {
         timestamp: new Date(),
       };
 
-      // Save to DB
-      try {
-        await ChatSession.findOneAndUpdate(
-          { sessionId },
-          { $push: { messages: msg } }
-        );
-      } catch (err) {
-        logger.warn("Could not save patient message: %s", err.message);
-      }
-
       // Broadcast to the session room so agents see it
       socket.to(`session:${sessionId}`).emit("new-message", {
         ...msg,
@@ -126,14 +95,6 @@ exports.setupChatSockets = (io) => {
     // ── End session (agent closes the chat) ─────────────────────────────────
     socket.on("end-session", async ({ sessionId }) => {
       if (!sessionId) return;
-      try {
-        await ChatSession.findOneAndUpdate(
-          { sessionId },
-          { closedAt: new Date(), outcome: "Resolved" }
-        );
-      } catch (err) {
-        logger.warn("Could not close session: %s", err.message);
-      }
       io.to(`session:${sessionId}`).emit("session-ended", {
         message: "This conversation has been closed by the agent.",
         timestamp: new Date().toISOString(),
