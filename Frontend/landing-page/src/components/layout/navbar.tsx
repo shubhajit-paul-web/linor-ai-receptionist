@@ -60,7 +60,7 @@ export function Navbar() {
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="#signin"
+            href="https://69f8418b2d5c30b7b5a15a35--dulcet-frangollo-f1dfec.netlify.app/"
             className="text-[13px] font-medium text-white/50 hover:text-white transition-colors"
           >
             Log in
