@@ -367,7 +367,7 @@ export default function Register() {
               type="button"
               onClick={() => {
                 // Directs the browser to your backend Passport trigger route
-                window.location.href = "http://localhost:5000/api/auth/google";
+                window.location.href = "https://linor-auth.onrender.com/api/auth/google";
               }}
               className="mt-4 w-full h-10 rounded-md text-sm font-semibold border border-border bg-surface hover:bg-surface-secondary text-text-primary transition-colors flex items-center justify-center gap-2"
             >
