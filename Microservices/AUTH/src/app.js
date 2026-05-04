@@ -9,9 +9,9 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const errorHandler = require("./Middlewares/error.middleware.js");
 const authRoutes = require("./Routes/auth.routes.js");
-const session = require('express-session');
-const passport = require('passport');
-require('./OAuth/passport.js'); // Path to your strategy file
+const session = require("express-session");
+const passport = require("passport");
+require("./OAuth/passport.js"); // Path to your strategy file
 
 const app = express();
 
@@ -19,18 +19,24 @@ const app = express();
 app.use(helmet());
 
 // CORS — allow only our frontend
-app.use(cors({
-  origin: 'https://provider-portal-eosin-seven.vercel.app/', // Replace with your actual domain
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: [
+      "https://provider-portal-eosin-seven.vercel.app/",
+      "http://localhost:5173",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  }),
+);
 
 app.use(cookieParser());
 
-app.use(session({ secret: 'your_secret', resave: false, saveUninitialized: true }));
+app.use(
+  session({ secret: "your_secret", resave: false, saveUninitialized: true }),
+);
 app.use(passport.initialize());
 app.use(passport.session());
-
 
 // Body parsing — understand JSON request bodies (BEFORE sanitization)
 app.use(express.json({ limit: "16kb" }));
