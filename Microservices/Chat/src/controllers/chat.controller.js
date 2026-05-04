@@ -214,51 +214,7 @@ exports.chat = asyncHandler(async (req, res) => {
       });
 
   // ── Step 8: Persist conversation ───────────────────────
-  // Upsert session doc — create on first message, append on subsequent.
-  try {
-    const detectedIntents = [];
-    if (detectBookingIntent(message)) detectedIntents.push("booking");
-    if (isSymptom) detectedIntents.push("symptom");
-
-    const outcome = detectBookingIntent(message)
-      ? "Booked"
-      : faqs.length && !isSymptom
-      ? "FAQ Only"
-      : aiFailed
-      ? "Unresolved"
-      : "Resolved";
-
-    const sentimentMap = { urgent: "negative", anxious: "negative", frustrated: "negative", normal: "positive" };
-
-    await ChatSession.findOneAndUpdate(
-      { sessionId, tenantId: user_id },
-      {
-        $setOnInsert: {
-          tenantId: user_id,
-          sessionId,
-          createdAt: new Date(),
-          source: req.headers["x-widget-source"] || "Web Widget",
-        },
-        $push: {
-          messages: {
-            $each: [
-              { role: "user", content: message, timestamp: new Date() },
-              { role: "assistant", content: aiReply, timestamp: new Date() },
-            ],
-          },
-        },
-        $set: {
-          outcome,
-          sentiment: sentimentMap[tone] || "neutral",
-          intents: detectedIntents,
-          updatedAt: new Date(),
-        },
-      },
-      { upsert: true, returnDocument: 'after' }
-    );
-  } catch (err) {
-    logger.warn("Failed to persist chat session: %s", err.message);
-  }
+  // Chat sessions are no longer saved to the database
 
   return res.json({ success: true, reply: aiReply, suggestions });
 });
@@ -355,33 +311,14 @@ exports.requestTransfer = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "sessionId is required" });
   }
 
-  // Update or create the session as needing human transfer
-  const session = await ChatSession.findOneAndUpdate(
-    { sessionId, tenantId },
-    {
-      $set: {
-        transferredToHuman: true,
-        transferRequestedAt: new Date(),
-        outcome: "Human Transfer",
-      },
-      $setOnInsert: {
-        tenantId,
-        sessionId,
-        createdAt: new Date(),
-        source: "Web Widget",
-      },
-    },
-    { upsert: true, returnDocument: 'after' }
-  );
-
-  // Emit real-time event to all agents in tenant room
+  // Emit real-time event to all agents in tenant room (no database persistence)
   const io = req.app.get("io");
   if (io) {
     io.to(`tenant:${tenantId}`).emit("transfer-request", {
       sessionId,
       tenantId,
       requestedAt: new Date().toISOString(),
-      preview: session.messages?.slice(-1)[0]?.content?.slice(0, 100) || "Patient requesting help",
+      preview: "Patient requesting human agent assistance",
     });
   }
 
