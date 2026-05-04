@@ -16,7 +16,6 @@ const {
 } = require("../utils/bookingStateMachine");
 const { buildSuggestions } = require("../utils/suggestionBuilder");
 const logger = require("../utils/logger");
-const ChatSession = require("../model/chat.model");
 
 const RATE_LIMIT = 20;
 const RATE_LIMIT_TTL = 60;
