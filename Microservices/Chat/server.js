@@ -2,7 +2,8 @@ require("dotenv").config();
 
 const app = require("./src/app");
 const redis = require("./src/service/redisClient");
-const { setupVoiceSockets } = require("./src/service/voiceSocket");
+const { setupChatSockets } = require("./src/service/chatSocket");
+const CONNECTDB = require("./src/db/db");
 const http = require("http");
 const { Server } = require("socket.io");
 const logger = require("./src/utils/logger");
@@ -15,6 +16,7 @@ const REQUIRED_ENVS = [
   "FAQ_SERVICE_URL",
   "APPOINTMENT_SERVICE_URL",
   "REDIS_URL",
+  "MONGODB_URI",
 ];
 REQUIRED_ENVS.forEach((key) => {
   if (!process.env[key]) {
@@ -23,16 +25,22 @@ REQUIRED_ENVS.forEach((key) => {
   }
 });
 
+// ── Connect to DB ──────────────────────────────────────────
+CONNECTDB();
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*", // Restrict this to your frontend URL in production
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
 
-setupVoiceSockets(io);
+setupChatSockets(io);
+
+// Expose io to the app so controllers can emit events
+app.set("io", io);
 
 // ── Start server ───────────────────────────────────────────
 const PORT = process.env.PORT || 5004;

@@ -117,6 +117,22 @@ export function messagesStyles() {
       outline-offset: 1px;
     }
 
+    .header__btn--transfer {
+      color: var(--text-secondary);
+    }
+    .header__btn--transfer:hover:not(:disabled) {
+      color: var(--primary);
+      background: rgba(var(--primary-rgb), 0.1);
+    }
+    .header__btn--transfer.is-active {
+      color: var(--primary);
+      background: rgba(var(--primary-rgb), 0.12);
+    }
+    .header__btn--transfer:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
     /* ===================================================
        MESSAGES AREA
     =================================================== */

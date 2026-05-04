@@ -112,3 +112,9 @@ export const ICON_OFFLINE = `
   <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
   <line x1="12" y1="20" x2="12.01" y2="20"/>
 </svg>`;
+
+export const ICON_HUMAN = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+  <circle cx="12" cy="7" r="4"/>
+</svg>`;

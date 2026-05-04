@@ -20,7 +20,7 @@ import { createSession } from '../features/session.js';
 import { createVoiceController } from '../features/voice.js';
 import { createSoundController } from '../features/sounds.js';
 import { createNetworkMonitor } from '../features/network.js';
-import { sendMessage } from '../api/chat.js';
+import { sendMessage, requestHumanTransfer } from '../api/chat.js';
 import { classifyError } from '../api/client.js';
 import { createEventBus } from '../utils/events.js';
 import { generateId } from '../utils/uid.js';
@@ -251,6 +251,10 @@ export function createWidget(shadow, config) {
     if (!nextEnabled) voice.cancelSpeaking();
   });
 
+  bus.on('request-transfer', () => {
+    handleHumanTransfer();
+  });
+
   // ── 9. Open / close ────────────────────────────────────────────────────────
 
   function openWidget() {
@@ -285,7 +289,121 @@ export function createWidget(shadow, config) {
   };
   document.addEventListener('keydown', handleEscapeKey);
 
-  // ── 11. Send message flow ──────────────────────────────────────────────────
+  // ── 11. Human transfer flow ─────────────────────────────────────────────────
+
+  let agentSocket = null;
+
+  async function handleHumanTransfer() {
+    const state = store.getState();
+    if (state.transferState !== 'none') return;
+    if (!config.apiKey || !config.apiUrl) return;
+
+    store.setState({ transferState: 'requested', status: 'loading' });
+
+    // Add a system message notifying the patient
+    const systemMsg = {
+      id: generateId(),
+      role: 'assistant',
+      content: '🔄 Connecting you to a human agent. Please hold on…',
+      timestamp: Date.now(),
+      status: 'sent',
+      isSystem: true,
+    };
+    store.setState((s) => ({
+      messages: [...s.messages, systemMsg],
+      status: 'idle',
+    }));
+
+    try {
+      await requestHumanTransfer(config);
+    } catch (err) {
+      store.setState({
+        transferState: 'none',
+        error: { message: 'Could not connect to a human agent right now. Please try again.', retryable: true, failedMessageId: null },
+        status: 'error',
+      });
+      return;
+    }
+
+    // Connect via socket.io to receive agent messages in real time
+    const socketUrl = config.apiUrl.replace(/\/api\/chat.*$/, '');
+    try {
+      // Dynamically load socket.io-client if the CDN or local version is available
+      let io = typeof window !== 'undefined' && window.io;
+      if (!io) {
+        // Try loading from same origin as apiUrl
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = `${socketUrl}/socket.io/socket.io.js`;
+          s.onload = resolve;
+          s.onerror = reject;
+          document.head.appendChild(s);
+        });
+        io = window.io;
+      }
+      if (io) {
+        agentSocket = io(socketUrl, { transports: ['websocket', 'polling'] });
+
+        agentSocket.on('connect', () => {
+          agentSocket.emit('join-session', {
+            sessionId: config.sessionId,
+            tenantId: config.apiKey,
+          });
+        });
+
+        agentSocket.on('agent-joined', ({ agentName }) => {
+          store.setState({ transferState: 'connected', agentName });
+          const joinMsg = {
+            id: generateId(),
+            role: 'assistant',
+            content: `✅ ${agentName} has joined the conversation.`,
+            timestamp: Date.now(),
+            status: 'sent',
+            isSystem: true,
+          };
+          store.setState((s) => ({ messages: [...s.messages, joinMsg] }));
+          scrollToBottom(true);
+        });
+
+        agentSocket.on('new-message', ({ content, isHuman, agentName: aName }) => {
+          if (!isHuman) return; // Patient's own messages are added optimistically
+          const agentMsg = {
+            id: generateId(),
+            role: 'assistant',
+            content,
+            timestamp: Date.now(),
+            status: 'sent',
+          };
+          store.setState((s) => ({ messages: [...s.messages, agentMsg] }));
+          sounds.play('receive');
+          if (!store.getState().isOpen) {
+            store.setState((s) => ({ unreadCount: s.unreadCount + 1 }));
+          }
+          scrollToBottom(true);
+        });
+
+        agentSocket.on('session-ended', () => {
+          store.setState({ transferState: 'ended', agentName: null });
+          const endMsg = {
+            id: generateId(),
+            role: 'assistant',
+            content: 'The conversation has been closed by the agent.',
+            timestamp: Date.now(),
+            status: 'sent',
+            isSystem: true,
+          };
+          store.setState((s) => ({ messages: [...s.messages, endMsg] }));
+          if (agentSocket) agentSocket.disconnect();
+          agentSocket = null;
+        });
+      }
+    } catch (socketErr) {
+      // Socket failed — transfer still went through via REST, agent can view in portal
+      console.warn('[AI Widget] Socket.IO unavailable; transfer request sent via REST.', socketErr);
+    }
+  }
+
+  // ── 12. Send message flow ──────────────────────────────────────────────────
 
   async function handleSend(text) {
     const state = store.getState();
@@ -302,13 +420,28 @@ export function createWidget(shadow, config) {
     // Optimistic update: add user message immediately
     store.setState((s) => ({
       messages: [...s.messages, userMessage],
-      status: 'loading',
+      status: 'idle',
       error: null,
     }));
 
-    // Subtle send sound (no-op if disabled / unsupported)
     sounds.play('send');
 
+    // If human agent is connected, route through socket
+    if (state.transferState === 'connected' && agentSocket?.connected) {
+      agentSocket.emit('patient-message', {
+        sessionId: config.sessionId,
+        content: text,
+      });
+      store.setState((s) => ({
+        messages: s.messages.map((m) =>
+          m.id === userMessage.id ? { ...m, status: 'sent' } : m
+        ),
+      }));
+      return;
+    }
+
+    // Normal AI flow
+    store.setState({ status: 'loading' });
     await dispatchApiCall(userMessage);
   }
 
@@ -412,6 +545,7 @@ export function createWidget(shadow, config) {
     try { sounds.destroy(); } catch {}
     try { destroyHeader(); } catch {}
     try { destroyOffline(); } catch {}
+    try { if (agentSocket) agentSocket.disconnect(); } catch {}
   }
 
   return {

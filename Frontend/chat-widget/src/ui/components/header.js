@@ -15,7 +15,7 @@
  */
 
 import { h, getInitials } from '../../utils/dom.js';
-import { ICON_CHEVRON_DOWN, ICON_VOLUME_ON, ICON_VOLUME_OFF } from '../../utils/icons.js';
+import { ICON_CHEVRON_DOWN, ICON_VOLUME_ON, ICON_VOLUME_OFF, ICON_HUMAN } from '../../utils/icons.js';
 
 /**
  * @param {object} store  — reactive state store (for ttsEnabled/ttsSupported)
@@ -92,6 +92,32 @@ export function createHeader(store, bus, config) {
     ttsBtn.title = on ? 'Voice responses: on' : 'Voice responses: off';
   }
 
+  // ── Human transfer button (optional) ─────────────────────────────────────
+
+  const transferBtn = h('button', {
+    class: 'header__btn header__btn--transfer',
+    type: 'button',
+    'aria-label': 'Talk to a human agent',
+    title: 'Talk to a human',
+    html: ICON_HUMAN,
+  });
+
+  const handleTransfer = () => bus.emit('request-transfer');
+  transferBtn.addEventListener('click', handleTransfer);
+
+  function syncTransferButton(state) {
+    const requested = state.transferState === 'requested';
+    const connected = state.transferState === 'connected';
+    const ended = state.transferState === 'ended';
+    transferBtn.classList.toggle('is-active', requested || connected);
+    transferBtn.disabled = requested || connected || ended;
+    transferBtn.title = requested
+      ? 'Connecting to agent…'
+      : connected
+      ? 'Agent is connected'
+      : 'Talk to a human';
+  }
+
   // ── Close button ──────────────────────────────────────────────────────────
 
   const closeBtn = h('button', {
@@ -104,7 +130,7 @@ export function createHeader(store, bus, config) {
   const handleClose = () => bus.emit('close');
   closeBtn.addEventListener('click', handleClose);
 
-  const actionsEl = h('div', { class: 'header__actions' }, ttsBtn, closeBtn);
+  const actionsEl = h('div', { class: 'header__actions' }, ttsBtn, transferBtn, closeBtn);
 
   // ── Root ──────────────────────────────────────────────────────────────────
 
@@ -119,15 +145,27 @@ export function createHeader(store, bus, config) {
     ) {
       syncTtsButton(state);
     }
+    if (state.transferState !== prev?.transferState) {
+      syncTransferButton(state);
+    }
+    if (state.agentName !== prev?.agentName && state.agentName) {
+      subtitleEl.textContent = `${state.agentName} (Human)`;
+    } else if (!state.agentName) {
+      subtitleEl.textContent = state.transferState === 'requested'
+        ? 'Connecting to agent…'
+        : 'Active now';
+    }
   }
   const unsubscribe = store.subscribe(update);
   syncTtsButton(store.getState());
+  syncTransferButton(store.getState());
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   function destroy() {
     closeBtn.removeEventListener('click', handleClose);
     ttsBtn.removeEventListener('click', handleTtsToggle);
+    transferBtn.removeEventListener('click', handleTransfer);
     unsubscribe();
   }
 

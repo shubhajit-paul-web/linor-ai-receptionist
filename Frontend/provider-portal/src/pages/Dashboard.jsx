@@ -7,7 +7,9 @@ import {
   Sparkles, ShieldCheck, Zap, ChevronRight,
 } from 'lucide-react';
 import useClinicStore from '../store/useClinicStore';
+import useAppointmentStore from '../store/useAppointmentStore';
 import { computeLogStats } from '../lib/chatLogsData';
+import { chatApi } from '../lib/api';
 import useUIStore from '../store/useUIStore';
 import { StatCard } from '../components/shared/StatCard';
 import { StatusBadge } from '../components/shared/StatusBadge';
@@ -283,32 +285,43 @@ function SkeletonQuickActions() {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { appointments, clinic, chatSessions, loadProfileFromApi } = useClinicStore();
+  const { clinic, loadProfileFromApi } = useClinicStore();
+  const { appointments, fetchAppointments } = useAppointmentStore();
   const welcomeDismissed = useUIStore((s) => s.welcomeDismissed);
   const dismissWelcome = useUIStore((s) => s.dismissWelcome);
 
-  // Hydrate clinic profile from API on mount.
-  // Errors are logged but don't block the page — store has demo defaults.
-  useEffect(() => {
-    loadProfileFromApi().catch((err) => {
-      // eslint-disable-next-line no-console
-      console.error('Failed to load clinic profile:', err);
-    });
-  }, [loadProfileFromApi]);
-
+  const [chatStats, setChatStats] = useState({ total: 0, resolution: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate async data fetch — resolves after 1.3 s
+  // Load all data on mount
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 1300);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    const loadAll = async () => {
+      try {
+        await Promise.all([
+          loadProfileFromApi().catch(() => {}),
+          fetchAppointments().catch(() => {}),
+          chatApi.getSessions({ limit: 100 }).then((res) => {
+            if (!cancelled && res?.data) {
+              const stats = computeLogStats(res.data);
+              setChatStats({ total: stats.total, resolution: stats.resolution });
+            }
+          }).catch(() => {}),
+        ]);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    loadAll();
+    return () => { cancelled = true; };
   }, []);
 
-  // ── Derived counters ────────────────────────────────────────────
-  const pending = appointments.filter((a) => a.status === 'Pending').length;
-  const logStats = useMemo(() => computeLogStats(chatSessions), [chatSessions]);
-  const sessions = logStats.total;
-  const resolutionRate = logStats.resolution;
+  // ── Derived counters ────────────────────────────────────────
+  const pending = appointments.filter(
+    (a) => (a.status || '').toLowerCase() === 'pending'
+  ).length;
+  const sessions = chatStats.total;
+  const resolutionRate = chatStats.resolution;
   const recent = useMemo(() => appointments.slice(0, 5), [appointments]);
   const setupDone = Object.values(clinic.setupSteps).filter(Boolean).length;
   const showSetup = setupDone < 4;
@@ -495,8 +508,8 @@ export default function Dashboard() {
                   </tr>
                 ) : (
                   recent.map((appt) => (
-                    <tr key={appt.id} className="group">
-                      <td className="font-semibold text-text-primary">{appt.patient}</td>
+                    <tr key={appt._id || appt.id} className="group">
+                      <td className="font-semibold text-text-primary">{appt.patientName || appt.patient}</td>
                       <td>{appt.service}</td>
                       <td>{formatDate(appt.date)}</td>
                       <td className="font-mono tabular-nums">{appt.time}</td>

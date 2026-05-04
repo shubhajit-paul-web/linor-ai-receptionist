@@ -12,32 +12,20 @@ import useAuthStore from '../store/useAuthStore';
  * Helper to build API URL based on environment
  */
 const getApiUrl = (service) => {
-  if (import.meta.env.local) {
-    // In development, use Vite proxy paths
-    const proxyMap = {
-      auth: "/api/auth",
-      appointments: "/api/appointments",
-      chat: "/api/chat",
-      faqs: "/api/faqs",
-      tenant: "/api/tenants",
-    };
-    return proxyMap[service] || "/api/auth";
-  } else {
-    // In production, use environment variables
-    const envMap = {
-      auth: import.meta.env.VITE_AUTH_API_URL,
-      appointments: import.meta.env.VITE_APPOINTMENT_API_URL,
-      chat: import.meta.env.VITE_CHAT_API_URL,
-      faqs: import.meta.env.VITE_FAQS_API_URL,
-      tenant: import.meta.env.VITE_TENANT_API_URL,
-    };
-    return envMap[service] || import.meta.env.VITE_AUTH_API_URL;
-  }
+  // Always use environment variables — they are set correctly in .env.local
+  const envMap = {
+    auth: import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000/api/auth",
+    appointments: import.meta.env.VITE_APPOINTMENT_API_URL || "http://localhost:5003/api/appointments",
+    chat: import.meta.env.VITE_CHAT_API_URL || "http://localhost:5004/api/chat",
+    faqs: import.meta.env.VITE_FAQS_API_URL || "http://localhost:5002/api/faqs",
+    tenant: import.meta.env.VITE_TENANT_API_URL || "http://localhost:5001/api/tenants",
+  };
+  return envMap[service] || envMap.auth;
 };
 
 const apiClient = async (service, endpoint, options = {}) => {
   const baseUrl = getApiUrl(service);
-  const token = useAuthStore.getState().token; // Get token synchronously from Zustand
+  const { token, apiKey } = useAuthStore.getState();
   
   try {
     const headers = {
@@ -48,6 +36,11 @@ const apiClient = async (service, endpoint, options = {}) => {
     // Add Authorization header if token exists
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    // Chat, FAQ, appointment services authenticate via x-api-key (tenant key)
+    if (apiKey && ["chat", "faqs", "appointments"].includes(service)) {
+      headers["x-api-key"] = apiKey;
     }
 
     const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -121,7 +114,7 @@ export const appointmentApi = {
       body: JSON.stringify(appointmentData),
     }),
 
-  getById: (id) => apiClient("appointments"`/${id}`, { method: "GET" }),
+  getById: (id) => apiClient("appointments", `/${id}`, { method: "GET" }),
 
   update: (id, appointmentData) =>
     apiClient("appointments", `/${id}/status`, {
@@ -138,22 +131,35 @@ export const appointmentApi = {
  * ═══════════════════════════════════════════════════════════════════
  */
 export const chatApi = {
-  getChats: () => apiClient("chat", "/", { method: "GET" }),
-
-  startChat: (data) =>
+  // POST /api/chat — send a message to the AI (used by chat widget only)
+  sendMessage: (data) =>
     apiClient("chat", "/", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  sendMessage: (chatId, message) =>
-    apiClient("chat", `/${chatId}/messages`, {
+  // GET /api/chat/sessions — provider portal chat logs
+  getSessions: (params = {}) => {
+    const qs = new URLSearchParams();
+    if (params.page)      qs.set("page",      String(params.page));
+    if (params.limit)     qs.set("limit",     String(params.limit));
+    if (params.outcome && params.outcome !== "All") qs.set("outcome", params.outcome);
+    if (params.sentiment && params.sentiment !== "All") qs.set("sentiment", params.sentiment);
+    if (params.search)    qs.set("search",    params.search);
+    if (params.transferred) qs.set("transferred", "true");
+    const query = qs.toString() ? `?${qs.toString()}` : "";
+    return apiClient("chat", `/sessions${query}`, { method: "GET" });
+  },
+
+  // POST /api/chat/transfer — request human agent handover
+  requestTransfer: (sessionId) =>
+    apiClient("chat", "/transfer", {
       method: "POST",
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ sessionId }),
     }),
 
-  getMessages: (chatId) =>
-    apiClient("chat", `/${chatId}/messages`, { method: "GET" }),
+  // GET /api/chat/clinic-info — fetch widget config from backend
+  getClinicInfo: () => apiClient("chat", "/clinic-info", { method: "GET" }),
 };
 
 /**
