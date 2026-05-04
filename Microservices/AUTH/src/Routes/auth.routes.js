@@ -29,7 +29,7 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 // ROUTE 2: The callback - Where Google sends the user back
 router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: 'http://localhost:5173/login' }),
+  passport.authenticate('google', { failureRedirect: 'https://provider-portal-eosin-seven.vercel.app/login' }),
   (req, res) => {
     // Successful authentication - req.user is set by Passport
     const token = req.user.generateToken();
@@ -52,7 +52,7 @@ router.get('/google/callback',
     }));
 
     // Redirect to frontend with token and user data
-    res.redirect(`http://localhost:5173/oauth-success?token=${token}&user=${userData}`);
+    res.redirect(`https://provider-portal-eosin-seven.vercel.app/oauth-success?token=${token}&user=${userData}`);
   }
 );
 
