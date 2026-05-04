@@ -144,37 +144,44 @@
     </div>
 
     <!--
-      Mock API: intercept fetch calls to the demo endpoint and simulate
-      realistic responses with a random 1-2 second delay.
+      Dev config: set apiKey and apiUrl to your running Chat service.
+      The mock intercept below is ONLY active when using the demo-api fallback.
+      For real API testing, set apiUrl to http://localhost:5004/api/chat
+      and apiKey to your tenant API key from the provider portal.
     -->
     <script>
+      // ── Mock fallback (used only when apiKey = 'demo-key-12345') ──
       const _originalFetch = window.fetch.bind(window);
       const MOCK_REPLIES = [
-        "Hi there! I'm Aria, your AI assistant. How can I help you today?",
-        "That's a great question! I'd be happy to help you with that. Could you provide a bit more detail?",
-        "I understand your concern. Let me look into that for you right away.",
-        "Thanks for reaching out! Our team typically responds within 24 hours, but I can help you right now.",
-        "Absolutely! Here's what I know about that topic. Feel free to ask follow-up questions.",
-        "I'm sorry to hear that. Let me see what I can do to resolve this for you.",
-        "Great choice! That's one of our most popular options. Would you like me to walk you through it?",
+        "Hi there! I'm Aria, your AI receptionist. How can I help you today?",
+        "I can help you book an appointment, answer questions about our services, or connect you with our team. What do you need?",
+        "Our clinic is open Monday–Friday 8am–6pm and Saturday 9am–2pm. Would you like to book an appointment?",
+        "I understand. Let me check our schedule. Can I get your full name first?",
+        "Great! We have availability this Thursday at 2:30pm or Friday at 10am. Which works for you?",
+        "I've noted your preference. Our specialist will review your request. Is there anything else I can help with?",
       ];
 
       const MOCK_SUGGESTIONS = [
         ['Book an appointment', 'Working hours', 'Services offered', 'Contact info'],
-        ['Yes, tell me more', 'No thanks', 'Book it'],
+        ['Yes, book it', 'No thanks', 'Tell me more'],
         ['Today', 'Tomorrow', 'This weekend', 'Next week'],
-        ['Talk to a human', 'Start over'],
+        ['Talk to a human', 'Start over', 'More options'],
       ];
 
       window.fetch = (url, opts) => {
-        if (typeof url === 'string' && url.includes('demo-api')) {
+        if (typeof url === 'string' && url.includes('localhost:5004') || (typeof url === 'string' && url.includes('demo-api'))) {
+          // If pointing to localhost and backend is up, pass through
+          if (typeof url === 'string' && url.includes('localhost:5004')) {
+            return _originalFetch(url, opts);
+          }
+          // Mock for demo-api
           return new Promise((resolve) => {
-            const delay = 1000 + Math.random() * 1000;
+            const delay = 800 + Math.random() * 800;
             setTimeout(() => {
               const reply = MOCK_REPLIES[Math.floor(Math.random() * MOCK_REPLIES.length)];
               const suggestions = MOCK_SUGGESTIONS[Math.floor(Math.random() * MOCK_SUGGESTIONS.length)];
               resolve(
-                new Response(JSON.stringify({ reply, suggestions }), {
+                new Response(JSON.stringify({ reply, suggestions, success: true }), {
                   status: 200,
                   headers: { 'Content-Type': 'application/json' },
                 })
@@ -185,25 +192,24 @@
         return _originalFetch(url, opts);
       };
 
-      // window.LinorConfig is the preferred programmatic config pattern
-      // (matches what the provider portal embed snippets generate)
+      // ── Widget Config ──
+      // To test with real backend: change apiKey to your tenant key from the provider portal
+      // and set apiUrl to http://localhost:5004/api/chat
       window.LinorConfig = {
-        apiKey:         'demo-key-12345',
-        apiUrl:         'https://demo-api.example.com/chat',
-        botName:        'Aria',
-        primaryColor:   '#6366f1',
-        welcomeMessage: 'Hi! 👋 I\'m Aria, your AI assistant. How can I help you today?',
-        position:       'bottom-right',
-        offsetX:        24,
-        offsetY:        24,
+        apiKey:          'demo-key-12345',
+        apiUrl:          'https://demo-api.example.com/chat',
+        botName:         'Aria',
+        primaryColor:    '#6366f1',
+        welcomeMessage:  "Hi! 👋 I'm Aria, your AI assistant. How can I help you today?",
+        position:        'bottom-right',
+        offsetX:         24,
+        offsetY:         24,
         hideAttribution: false,
-        // Voice mode — try it out on Chrome/Edge/Safari
-        enableVoice:    true,
-        enableTTS:      true,
-        ttsDefaultOn:   false,
-        voiceLang:      'en-US',
-        // Subtle sound effects (off by default)
-        enableSounds:   true,
+        enableVoice:     true,
+        enableTTS:       true,
+        ttsDefaultOn:    false,
+        voiceLang:       'en-US',
+        enableSounds:    true,
       };
     </script>
 

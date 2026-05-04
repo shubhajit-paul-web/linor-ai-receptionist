@@ -16,6 +16,7 @@ const {
 } = require("../utils/bookingStateMachine");
 const { buildSuggestions } = require("../utils/suggestionBuilder");
 const logger = require("../utils/logger");
+const ChatSession = require("../model/chat.model");
 
 const RATE_LIMIT = 20;
 const RATE_LIMIT_TTL = 60;
@@ -212,6 +213,53 @@ exports.chat = asyncHandler(async (req, res) => {
         tone,
       });
 
+  // ── Step 8: Persist conversation ───────────────────────
+  // Upsert session doc — create on first message, append on subsequent.
+  try {
+    const detectedIntents = [];
+    if (detectBookingIntent(message)) detectedIntents.push("booking");
+    if (isSymptom) detectedIntents.push("symptom");
+
+    const outcome = detectBookingIntent(message)
+      ? "Booked"
+      : faqs.length && !isSymptom
+      ? "FAQ Only"
+      : aiFailed
+      ? "Unresolved"
+      : "Resolved";
+
+    const sentimentMap = { urgent: "negative", anxious: "negative", frustrated: "negative", normal: "positive" };
+
+    await ChatSession.findOneAndUpdate(
+      { sessionId, tenantId: user_id },
+      {
+        $setOnInsert: {
+          tenantId: user_id,
+          sessionId,
+          createdAt: new Date(),
+          source: req.headers["x-widget-source"] || "Web Widget",
+        },
+        $push: {
+          messages: {
+            $each: [
+              { role: "user", content: message, timestamp: new Date() },
+              { role: "assistant", content: aiReply, timestamp: new Date() },
+            ],
+          },
+        },
+        $set: {
+          outcome,
+          sentiment: sentimentMap[tone] || "neutral",
+          intents: detectedIntents,
+          updatedAt: new Date(),
+        },
+      },
+      { upsert: true, new: true }
+    );
+  } catch (err) {
+    logger.warn("Failed to persist chat session: %s", err.message);
+  }
+
   return res.json({ success: true, reply: aiReply, suggestions });
 });
 
@@ -228,6 +276,121 @@ exports.getClinicInfo = asyncHandler(async (req, res) => {
       workingHrs: req.clinic.workingHrs,
       services: req.clinic.services,
     },
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/chat/sessions — provider portal chat logs
+// Query params: ?page=1&limit=20&outcome=Resolved&search=keyword
+// ─────────────────────────────────────────────────────────────
+exports.getChatSessions = asyncHandler(async (req, res) => {
+  const tenantId = req.user_id;
+  const page  = Math.max(1, parseInt(req.query.page)  || 1);
+  const limit = Math.min(100, parseInt(req.query.limit) || 20);
+  const skip  = (page - 1) * limit;
+
+  const filter = { tenantId };
+  if (req.query.outcome && req.query.outcome !== "All") {
+    filter.outcome = req.query.outcome;
+  }
+  if (req.query.sentiment && req.query.sentiment !== "All") {
+    filter.sentiment = req.query.sentiment.toLowerCase();
+  }
+  if (req.query.search) {
+    filter["messages.content"] = { $regex: req.query.search, $options: "i" };
+  }
+  if (req.query.transferred === "true") {
+    filter.transferredToHuman = true;
+  }
+
+  const [sessions, total] = await Promise.all([
+    ChatSession.find(filter)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    ChatSession.countDocuments(filter),
+  ]);
+
+  // Shape for the provider portal
+  const shaped = sessions.map((s) => {
+    const msgs = s.messages || [];
+    const firstUser = msgs.find((m) => m.role === "user");
+    const duration = s.closedAt
+      ? Math.round((new Date(s.closedAt) - new Date(s.createdAt)) / 60000)
+      : Math.round((new Date(s.updatedAt) - new Date(s.createdAt)) / 60000);
+
+    return {
+      id: s.sessionId,
+      date: s.createdAt,
+      duration: Math.max(1, duration),
+      messages: msgs.length,
+      outcome: s.outcome,
+      sentiment: s.sentiment,
+      preview: firstUser?.content?.slice(0, 80) || "(no message)",
+      source: s.source,
+      intents: s.intents || [],
+      transferredToHuman: s.transferredToHuman,
+      transcript: msgs.map((m) => ({
+        role: m.role,
+        text: m.content,
+        time: m.timestamp,
+      })),
+      responseTimeAvg: 1.5,
+    };
+  });
+
+  res.json({ success: true, data: shaped, total, page, limit });
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/chat/transfer — request human agent transfer
+// Body: { sessionId }
+// ─────────────────────────────────────────────────────────────
+exports.requestTransfer = asyncHandler(async (req, res) => {
+  const { sessionId } = req.body;
+  const tenantId = req.user_id;
+
+  if (!sessionId) {
+    return res.status(400).json({ success: false, message: "sessionId is required" });
+  }
+
+  // Update or create the session as needing human transfer
+  const session = await ChatSession.findOneAndUpdate(
+    { sessionId, tenantId },
+    {
+      $set: {
+        transferredToHuman: true,
+        transferRequestedAt: new Date(),
+        outcome: "Human Transfer",
+      },
+      $setOnInsert: {
+        tenantId,
+        sessionId,
+        createdAt: new Date(),
+        source: "Web Widget",
+      },
+    },
+    { upsert: true, new: true }
+  );
+
+  // Emit real-time event to all agents in tenant room
+  const io = req.app.get("io");
+  if (io) {
+    io.to(`tenant:${tenantId}`).emit("transfer-request", {
+      sessionId,
+      tenantId,
+      requestedAt: new Date().toISOString(),
+      preview: session.messages?.slice(-1)[0]?.content?.slice(0, 100) || "Patient requesting help",
+    });
+  }
+
+  logger.info("Human transfer requested for session %s (tenant %s)", sessionId, tenantId);
+
+  res.json({
+    success: true,
+    message: "Transfer request sent. An agent will join shortly.",
+    sessionId,
   });
 });
 

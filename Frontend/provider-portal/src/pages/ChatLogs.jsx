@@ -1,14 +1,16 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bot, MessageSquare, Download, Clock, Calendar,
   Filter, Copy, Smile, Frown, Meh, Globe, Smartphone, FileText, Check, Code,
-  Maximize, Minimize
+  Maximize, Minimize, UserCheck, RefreshCw, AlertCircle, Users
 } from 'lucide-react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { EmptyState } from '../components/shared/EmptyState';
 import { formatDate, formatTime, cn, copyToClipboard } from '../lib/utils';
-import { RICH_CHAT_SESSIONS, computeLogStats } from '../lib/chatLogsData';
+import { computeLogStats } from '../lib/chatLogsData';
+import { chatApi } from '../lib/api';
+import useAuthStore from '../store/useAuthStore';
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
 
@@ -195,16 +197,67 @@ function SkeletonTranscriptPanel() {
 // ─── Chat Logs Page ───────────────────────────────────────────────────────────
 
 export default function ChatLogs() {
-  const [sessions] = useState(RICH_CHAT_SESSIONS);
-  const [activeId, setActiveId] = useState(RICH_CHAT_SESSIONS[0]?.id || null);
+  const [sessions, setSessions] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+  const [transferRequests, setTransferRequests] = useState([]);
+  const apiKey = useAuthStore((s) => s.apiKey);
 
-  // Simulate initial data load — resolves after 1.2 s
+  const fetchSessions = useCallback(async (params = {}) => {
+    setIsLoading(true);
+    setApiError(null);
+    try {
+      const res = await chatApi.getSessions({ limit: 50, ...params });
+      const data = res?.data || [];
+      setSessions(data);
+      if (data.length > 0 && !activeId) {
+        setActiveId(data[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to fetch chat sessions:', err);
+      setApiError(err.message || 'Failed to load chat sessions');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeId]);
+
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(t);
+    fetchSessions();
   }, []);
+
+  // Real-time socket.io for human transfer notifications
+  useEffect(() => {
+    if (!apiKey) return;
+    let socket;
+    const CHAT_URL = import.meta.env.VITE_CHAT_API_URL?.replace('/api/chat', '') || 'http://localhost:5004';
+    
+    const loadSocket = async () => {
+      try {
+        const { io } = await import('socket.io-client');
+        socket = io(CHAT_URL, { transports: ['websocket', 'polling'] });
+
+        socket.on('connect', () => {
+          socket.emit('join-tenant-room', { tenantId: apiKey });
+        });
+
+        socket.on('transfer-request', (data) => {
+          setTransferRequests((prev) => {
+            if (prev.some((r) => r.sessionId === data.sessionId)) return prev;
+            return [{ ...data, id: data.sessionId }, ...prev];
+          });
+          // Refresh sessions so the new transfer shows up
+          fetchSessions();
+        });
+      } catch (err) {
+        console.warn('Socket.IO not available:', err.message);
+      }
+    };
+
+    loadSocket();
+    return () => { if (socket) socket.disconnect(); };
+  }, [apiKey, fetchSessions]);
 
   // Handle escape key and body scroll lock for full screen
   useEffect(() => {
@@ -233,21 +286,23 @@ export default function ChatLogs() {
   const [outcomeFilter, setOutcomeFilter] = useState('All');
   const [sentimentFilter, setSentimentFilter] = useState('All');
 
+  // Re-fetch when filters change (debounced for search)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetchSessions({ search, outcome: outcomeFilter, sentiment: sentimentFilter });
+    }, search ? 400 : 0);
+    return () => clearTimeout(t);
+  }, [search, outcomeFilter, sentimentFilter]);
+
   const stats = useMemo(() => computeLogStats(sessions), [sessions]);
 
+  // Client-side filtering for transcript search within loaded sessions
   const filteredSessions = useMemo(() => {
-    return sessions.filter((s) => {
-      const matchSearch = !search
-        || s.id.toLowerCase().includes(search.toLowerCase())
-        || s.preview.toLowerCase().includes(search.toLowerCase())
-        || s.transcript.some(m => m.text.toLowerCase().includes(search.toLowerCase()));
-
-      const matchOutcome = outcomeFilter === 'All' || s.outcome === outcomeFilter;
-      const matchSentiment = sentimentFilter === 'All' || s.sentiment === sentimentFilter.toLowerCase();
-
-      return matchSearch && matchOutcome && matchSentiment;
-    });
-  }, [sessions, search, outcomeFilter, sentimentFilter]);
+    if (!transcriptSearch) return sessions;
+    return sessions.filter((s) =>
+      s.transcript?.some(m => m.text?.toLowerCase().includes(transcriptSearch.toLowerCase()))
+    );
+  }, [sessions, transcriptSearch]);
 
   const activeSession = useMemo(() =>
     sessions.find((s) => s.id === activeId) || null
@@ -289,6 +344,54 @@ export default function ChatLogs() {
 
   return (
     <div className="flex flex-col gap-6 max-w-[1400px] mx-auto h-full">
+
+      {/* ── Transfer Request Alerts ────────────────────────────── */}
+      <AnimatePresence>
+        {transferRequests.map((req) => (
+          <motion.div
+            key={req.id}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-3 p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm"
+          >
+            <Users size={16} className="text-warning flex-shrink-0" />
+            <span className="flex-1 font-medium text-text-primary">
+              Patient requested human agent — Session <code className="text-xs bg-surface-secondary px-1 py-0.5 rounded">{req.sessionId?.slice(0, 16)}...</code>
+            </span>
+            <button
+              onClick={() => {
+                setActiveId(req.sessionId);
+                setTransferRequests((prev) => prev.filter((r) => r.id !== req.id));
+              }}
+              className="px-3 py-1 text-xs font-semibold bg-warning text-white rounded-md hover:bg-warning/90 transition-colors"
+            >
+              View Session
+            </button>
+            <button
+              onClick={() => setTransferRequests((prev) => prev.filter((r) => r.id !== req.id))}
+              className="p-1 text-text-muted hover:text-text-primary transition-colors"
+            >
+              ×
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {/* ── API Error ─────────────────────────────────────────── */}
+      {apiError && (
+        <div className="flex items-center gap-3 p-3 bg-danger/10 border border-danger/30 rounded-lg text-sm">
+          <AlertCircle size={16} className="text-danger flex-shrink-0" />
+          <span className="flex-1 text-text-primary">{apiError}</span>
+          <button
+            onClick={() => fetchSessions()}
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-danger text-white rounded-md hover:bg-danger/90 transition-colors"
+          >
+            <RefreshCw size={12} /> Retry
+          </button>
+        </div>
+      )}
+
       {/* ── Top Stats Row ──────────────────────────────────────── */}
       {isLoading ? (
         <SkeletonStatCards />

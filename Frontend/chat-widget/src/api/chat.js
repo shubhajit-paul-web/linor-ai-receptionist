@@ -97,6 +97,42 @@ export async function sendMessage(messages, config) {
 }
 
 /**
+ * Request a human agent transfer for the current session.
+ *
+ * @param {object} config — widget config (apiKey, apiUrl, sessionId)
+ * @returns {Promise<{ success: boolean, message: string }>}
+ */
+export async function requestHumanTransfer(config) {
+  const { apiKey, apiUrl, sessionId, requestTimeoutMs } = config;
+
+  // Derive the transfer endpoint: replace the last path segment with /transfer
+  const baseUrl = apiUrl.replace(/\/[^/]*$/, '');
+  const transferUrl = `${baseUrl}/transfer`;
+
+  const response = await fetchWithTimeout(
+    transferUrl,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ sessionId }),
+    },
+    requestTimeoutMs
+  );
+
+  if (!response.ok) {
+    let msg = `HTTP ${response.status}`;
+    try { const b = await response.json(); msg = b.message || msg; } catch {}
+    throw new Error(msg);
+  }
+
+  return response.json();
+}
+
+/**
  * Sanitize a suggestions array coming from the API.
  * - Strings only, trimmed, non-empty
  * - De-duplicated (case-insensitive)

@@ -99,6 +99,9 @@ export function createInitialState(sessionId, persistedMessages = [], overrides 
     ttsSupported: false,
     // Network
     online: true,
+    // Human transfer state
+    transferState: 'none',       // 'none' | 'requested' | 'connected' | 'ended'
+    agentName: null,
     ...overrides,
   };
 }
