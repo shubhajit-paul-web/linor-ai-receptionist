@@ -112,6 +112,7 @@ const useAuthStore = create(
       // Only persist what's needed — avoid leaking sensitive data
       partialize: (state) => ({
         user: state.user,
+        token: state.token, 
         apiKey: state.apiKey,
         isAuthenticated: state.isAuthenticated,
       }),
