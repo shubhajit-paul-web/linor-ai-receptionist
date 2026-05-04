@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
-const xss = require("xss-clean");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
@@ -44,11 +43,6 @@ app.use(cookieParser());
 // ── Body parsing ───────────────────────────────────────────
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-
-
-
-// ── XSS protection ─────────────────────────────────────────
-app.use(xss());
 
 // ── Rate limiting — chat gets more requests than other services
 app.use(
