@@ -3,7 +3,6 @@ require("dotenv").config();
 const app = require("./src/app");
 const redis = require("./src/service/redisClient");
 const { setupChatSockets } = require("./src/service/chatSocket");
-const CONNECTDB = require("./src/db/db");
 const http = require("http");
 const { Server } = require("socket.io");
 const logger = require("./src/utils/logger");
@@ -25,8 +24,7 @@ REQUIRED_ENVS.forEach((key) => {
   }
 });
 
-// ── Connect to DB ──────────────────────────────────────────
-CONNECTDB();
+
 
 const server = http.createServer(app);
 
