@@ -7,7 +7,7 @@ const {
   getProfile,
   updateProfile,
   regenerateApiKey,
-} = require("../controllers/tenant.controller");
+} = require("../Controllers/tenant.controller");
 
 const { authenticate } = require("../Middlewares/auth.middleware");
 const { verifyApiKey } = require("../Middlewares/apiKey.middleware");
