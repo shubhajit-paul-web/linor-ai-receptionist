@@ -254,7 +254,7 @@ exports.chat = asyncHandler(async (req, res) => {
           updatedAt: new Date(),
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
   } catch (err) {
     logger.warn("Failed to persist chat session: %s", err.message);
@@ -371,7 +371,7 @@ exports.requestTransfer = asyncHandler(async (req, res) => {
         source: "Web Widget",
       },
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   // Emit real-time event to all agents in tenant room
