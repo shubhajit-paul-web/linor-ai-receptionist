@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Linor AI | The Intelligent Receptionist Platform",
-  description: "Never miss a lead again. Linor AI is the smart, always-available receptionist that handles calls, schedules appointments, and qualifies leads.",
+  title: "Linor AI — The Intelligent Receptionist",
+  description: "Never miss a lead again. Linor AI handles calls, schedules appointments, and qualifies leads — 24/7.",
   keywords: ["AI Receptionist", "Virtual Assistant", "Call Handling", "Lead Qualification", "Linor AI"],
 };
 
@@ -26,9 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} scroll-smooth bg-black text-white antialiased selection:bg-brand-500 selection:text-white`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="flex min-h-screen flex-col font-sans overflow-x-hidden">
+      <body className="min-h-screen font-sans antialiased overflow-x-hidden">
         {children}
       </body>
     </html>

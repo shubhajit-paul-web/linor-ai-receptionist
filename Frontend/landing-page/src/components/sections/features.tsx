@@ -3,117 +3,100 @@
 import { motion } from "framer-motion";
 import { Container } from "@/components/ui/container";
 import { Calendar, MessageSquare, Clock, Zap, Shield, Headphones } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const features = [
   {
-    icon: <Clock className="w-5 h-5 text-white" />,
-    title: "Always Available",
-    description: "Your business never sleeps. Linor handles inquiries 24/7, ensuring no opportunity is missed regardless of timezone or holidays.",
-    className: "md:col-span-2 md:row-span-2",
+    icon: Clock,
+    title: "Always available",
+    description: "Your business never sleeps. Linor handles inquiries 24/7, ensuring no opportunity is missed.",
   },
   {
-    icon: <MessageSquare className="w-5 h-5 text-brand-400" />,
-    title: "Natural Conversations",
-    description: "Powered by advanced LLMs, Linor understands context, nuance, and intent with human-like latency.",
-    className: "md:col-span-1 md:row-span-1",
+    icon: MessageSquare,
+    title: "Natural conversations",
+    description: "Powered by advanced LLMs. Linor understands context, nuance, and intent with human-like accuracy.",
   },
   {
-    icon: <Calendar className="w-5 h-5 text-brand-400" />,
-    title: "Smart Scheduling",
-    description: "Seamlessly integrates with your calendar to book, reschedule, or cancel appointments.",
-    className: "md:col-span-1 md:row-span-1",
+    icon: Calendar,
+    title: "Smart scheduling",
+    description: "Integrates with your calendar to book, reschedule, or cancel appointments automatically.",
   },
   {
-    icon: <Zap className="w-5 h-5 text-brand-400" />,
-    title: "Instant Qualification",
-    description: "Automatically asks qualifying questions to categorize leads and route high-value prospects.",
-    className: "md:col-span-1 md:row-span-1",
+    icon: Zap,
+    title: "Lead qualification",
+    description: "Automatically asks qualifying questions to categorize and route high-value prospects.",
   },
   {
-    icon: <Shield className="w-5 h-5 text-brand-400" />,
-    title: "Enterprise Security",
-    description: "Bank-grade encryption and strict data privacy protocols ensure your customers' information is protected.",
-    className: "md:col-span-1 md:row-span-1",
+    icon: Shield,
+    title: "Enterprise security",
+    description: "Bank-grade encryption and strict data privacy protocols protect your customers' information.",
   },
   {
-    icon: <Headphones className="w-5 h-5 text-white" />,
-    title: "Seamless Handoff",
-    description: "When complex issues arise, Linor smoothly transfers the context and call to a human agent, preventing frustration.",
-    className: "md:col-span-2 md:row-span-1",
+    icon: Headphones,
+    title: "Seamless handoff",
+    description: "When complex issues arise, Linor smoothly transfers context and the call to a human agent.",
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="py-32 relative z-10 bg-black overflow-hidden">
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-brand-900/10 blur-[100px] rounded-full pointer-events-none mix-blend-screen" />
-      
+    <section id="features" className="py-24 md:py-32 relative">
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
       <Container>
-        <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-20">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
+        <div className="max-w-2xl mb-16">
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="px-3 py-1 text-xs font-semibold tracking-wide uppercase text-brand-400 bg-brand-500/10 border border-brand-500/20 rounded-full mb-6"
+            className="text-[13px] font-medium uppercase tracking-wider text-brand-400 mb-4"
           >
             Capabilities
-          </motion.div>
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
+          </motion.p>
+          <motion.h2
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight hero-text-gradient"
+            className="text-3xl md:text-4xl font-semibold tracking-[-0.02em] text-gradient mb-4"
           >
-            Engineered for scale. <br className="hidden md:block" />
+            Engineered for scale.
+            <br />
             Designed for humans.
           </motion.h2>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-gray-400 font-medium max-w-2xl"
+            transition={{ delay: 0.05 }}
+            className="text-base text-white/40 max-w-lg"
           >
-            Replace rigid IVR menus with fluid, intelligent conversations. Linor combines enterprise-grade reliability with state-of-the-art AI.
+            Replace rigid IVR menus with fluid, intelligent conversations that feel natural.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:auto-rows-[220px]">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={cn(
-                "glass-panel rounded-3xl p-8 flex flex-col justify-between group glass-panel-hover relative overflow-hidden transition-all duration-500",
-                feature.className
-              )}
-            >
-              {/* Subtle hover gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              
-              <div className="relative z-10">
-                <div className="mb-6 w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-brand-500/20 group-hover:border-brand-500/40 transition-colors duration-500 shadow-inner">
-                  {feature.icon}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.06] rounded-xl overflow-hidden border border-white/[0.06]">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.4, delay: index * 0.06 }}
+                className="bg-[#09090b] p-8 group hover:bg-white/[0.02] transition-colors duration-300"
+              >
+                <div className="mb-4 w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center group-hover:bg-brand-500/10 group-hover:border-brand-500/20 transition-colors duration-300">
+                  <Icon className="w-[18px] h-[18px] text-white/40 group-hover:text-brand-400 transition-colors duration-300" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3 tracking-tight group-hover:text-brand-300 transition-colors duration-300">
+                <h3 className="text-[15px] font-medium text-white/90 mb-2 tracking-tight">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400 leading-relaxed text-sm font-medium group-hover:text-gray-300 transition-colors duration-300 max-w-[90%]">
+                <p className="text-[13px] text-white/35 leading-relaxed">
                   {feature.description}
                 </p>
-              </div>
-              
-              {/* If it's a large card, we can add a decorative element */}
-              {feature.className.includes('col-span-2') && (
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-500/10 rounded-full blur-2xl group-hover:bg-brand-500/20 transition-colors duration-500 pointer-events-none" />
-              )}
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       </Container>
     </section>
