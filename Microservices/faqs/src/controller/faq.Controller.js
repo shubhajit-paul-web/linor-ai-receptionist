@@ -1,4 +1,4 @@
-const FAQ = require("../model/faq.model");
+const FAQ = require("../model/FAQ.model");
 const asyncHandler = require("../utils/asyncHandler");
 
 // ─────────────────────────────────────────
