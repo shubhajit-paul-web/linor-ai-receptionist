@@ -11,6 +11,12 @@ const logger = require("./utils/logger");
 
 const app = express();
 
+
+
+
+app.set('trust proxy', 1);
+
+
 // ── Security Headers with Helmet ───────────────────────────
 app.use(helmet());
 
@@ -63,6 +69,10 @@ app.use("/api", limiter);
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
+
+app.get("/ping", (req, res) => res.json({ ok: true }));
+
 
 // ── Health Check Endpoint ─────────────────────────────────
 app.get("/health", (req, res) => {
