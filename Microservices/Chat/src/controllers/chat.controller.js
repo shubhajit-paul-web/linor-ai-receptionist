@@ -81,12 +81,40 @@ exports.chat = asyncHandler(async (req, res) => {
 
     if (result.done) {
       if (result.appointmentData) {
-        await saveAppointment(
+        const saveResult = await saveAppointment(
           req.apiKey,
           user_id,
           sessionId,
           result.appointmentData,
         );
+
+        // If the slot is already taken (409), re-enter the booking flow at the
+        // time-selection step so the patient can pick a different slot.
+        if (saveResult?.conflict) {
+          const { message: conflictMsg, availableSlots } = saveResult;
+
+          // Re-open the booking session at ask_time step, preserving collected data
+          // so the patient can choose a different time without restarting the whole flow.
+          const restoredSession = {
+            step: "ask_time",
+            data: result.appointmentData,
+          };
+          await redis.setex(
+            `booking:${sessionId}`,
+            60 * 30,
+            JSON.stringify(restoredSession),
+          );
+
+          const slotList = availableSlots?.length
+            ? availableSlots.join(", ")
+            : "please check with us directly";
+
+          return res.json({
+            success: true,
+            reply: `⚠️ ${conflictMsg}\n\nAvailable slots: ${slotList}. Which would you like?`,
+            suggestions: availableSlots?.slice(0, 4) || [],
+          });
+        }
       }
       return res.json({
         success: true,
@@ -269,6 +297,13 @@ exports.requestTransfer = asyncHandler(async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // Helper — save appointment
 // ─────────────────────────────────────────────────────────────
+/**
+ * Save an appointment via the appointment service.
+ * Returns:
+ *   - null on success
+ *   - { conflict: true, message, availableSlots } on 409
+ *   - { error: true, message } on other failures
+ */
 const saveAppointment = async (apiKey, user_id, sessionId, data) => {
   try {
     const response = await fetch(
@@ -284,14 +319,27 @@ const saveAppointment = async (apiKey, user_id, sessionId, data) => {
     );
 
     if (!response.ok) {
-      const err = await response.text();
-      logger.error("Appointment save failed: %s %s", response.status, err);
-      return;
+      let body = {};
+      try { body = await response.json(); } catch { /* ignore parse errors */ }
+      logger.error("Appointment save failed: %s %s", response.status, JSON.stringify(body));
+
+      // 409 Conflict — slot already booked
+      if (response.status === 409) {
+        return {
+          conflict: true,
+          message: body.message || "That slot is already booked. Please choose another time.",
+          availableSlots: body.availableSlots || [],
+        };
+      }
+
+      return { error: true, message: body.message || `HTTP ${response.status}` };
     }
 
     const result = await response.json();
     logger.info("Appointment saved: %s", result.data?._id);
+    return null; // success
   } catch (err) {
     logger.error("Failed to save appointment: %s", err.message);
+    return { error: true, message: err.message };
   }
 };
