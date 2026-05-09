@@ -9,6 +9,11 @@ const logger = require("./utils/logger");
 
 const app = express();
 
+
+app.set('trust proxy', 1);
+
+
+
 // ── Security headers ───────────────────────────────────────
 // crossOriginResourcePolicy must be 'cross-origin' (not the default
 // 'same-origin') because the widget is embedded on external hospital
@@ -67,6 +72,11 @@ app.get("/health", (req, res) =>
     environment: process.env.NODE_ENV,
   }),
 );
+
+
+
+app.get("/ping", (req, res) => res.json({ ok: true }));
+
 
 // ── Routes ─────────────────────────────────────────────────
 app.use("/api/chat", require("./routes/chat.route"));
