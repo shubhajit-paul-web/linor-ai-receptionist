@@ -35,7 +35,10 @@ exports.getProfile = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info("Profile retrieved", { userId: user_id, clinicName: clinic.clinicName });
+  logger.info("Profile retrieved", {
+    userId: user_id,
+    clinicName: clinic.clinicName,
+  });
   res.json({ success: true, data: clinic });
 });
 
@@ -48,7 +51,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   const {
     clinicName,
     address,
-    city,           // <-- Add this
+    city, // <-- Add this
     postalCode,
     phone,
     workingHrs,
@@ -66,7 +69,10 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     !welcomeMsg &&
     !logoUrl
   ) {
-    logger.warn("Profile update validation failed", { userId: user_id, reason: "No fields provided" });
+    logger.warn("Profile update validation failed", {
+      userId: user_id,
+      reason: "No fields provided",
+    });
     return res.status(400).json({
       success: false,
       message: "Provide at least one field to update",
@@ -100,7 +106,11 @@ exports.updateProfile = asyncHandler(async (req, res) => {
       isProfileComplete: checkIsComplete(updateData),
     });
 
-    logger.info("Clinic profile created", { userId: user_id, clinicName: clinic.clinicName, isComplete: clinic.isProfileComplete });
+    logger.info("Clinic profile created", {
+      userId: user_id,
+      clinicName: clinic.clinicName,
+      isComplete: clinic.isProfileComplete,
+    });
 
     return res.status(201).json({
       success: true,
@@ -119,10 +129,14 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   const clinic = await Tenant.findOneAndUpdate(
     { user_id },
     { $set: updateData },
-    { returnDocument: 'after', runValidators: true },
+    { returnDocument: "after", runValidators: true },
   );
 
-  logger.info("Clinic profile updated", { userId: user_id, clinicName: clinic.clinicName, isComplete: clinic.isProfileComplete });
+  logger.info("Clinic profile updated", {
+    userId: user_id,
+    clinicName: clinic.clinicName,
+    isComplete: clinic.isProfileComplete,
+  });
 
   res.json({
     success: true,
@@ -142,9 +156,11 @@ exports.regenerateApiKey = asyncHandler(async (req, res) => {
   logger.debug("Searching for clinic", { userId: user_id });
 
   const clinic = await Tenant.findOne({ user_id });
-  logger.debug("Clinic lookup result", { found: !!clinic, userId: user_id });    
+  logger.debug("Clinic lookup result", { found: !!clinic, userId: user_id });
   if (!clinic) {
-    logger.warn("Cannot regenerate API key - clinic not found", { userId: user_id });
+    logger.warn("Cannot regenerate API key - clinic not found", {
+      userId: user_id,
+    });
     return res.status(404).json({
       success: false,
       message: "Clinic not found. Please complete your profile first.",
@@ -152,9 +168,39 @@ exports.regenerateApiKey = asyncHandler(async (req, res) => {
   }
 
   const rawApiKey = generateApiKey();
-  await Tenant.findOneAndUpdate({ user_id }, { apiKey: hashApiKey(rawApiKey) });
 
-  logger.info("API key regenerated", { userId: user_id, clinicName: clinic.clinicName });
+  const newHashedKey = hashApiKey(rawApiKey);
+
+  // ── Invalidate old key's Redis cache ──────────────────────
+  // Chat service caches clinic data as `clinic:<SHA256(rawKey)>`.
+  // The old hash IS the value currently stored in clinic.apiKey
+  // (which we fetched above with .select("+apiKey")).
+  // Re-fetch with +apiKey to get the old hash, then delete it.
+  try {
+    const clinicWithKey = await Tenant.findOne({ user_id }).select("+apiKey");
+    if (clinicWithKey?.apiKey) {
+      const Redis = require("ioredis");
+      const redisClient = new Redis(process.env.REDIS_URL, {
+        lazyConnect: true,
+      });
+      await redisClient.connect().catch(() => {});
+      await redisClient.del(`clinic:${clinicWithKey.apiKey}`);
+      await redisClient.quit();
+      logger.info("Old API key cache invalidated in Redis", {
+        userId: user_id,
+      });
+    }
+  } catch (err) {
+    logger.warn("Redis cache invalidation failed — old key expires in 4h", {
+      error: err.message,
+    });
+  }
+
+  await Tenant.findOneAndUpdate({ user_id }, { apiKey: newHashedKey });
+  logger.info("API key regenerated", {
+    userId: user_id,
+    clinicName: clinic.clinicName,
+  });
 
   res.json({
     success: true,

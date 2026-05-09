@@ -82,7 +82,7 @@ exports.chat = asyncHandler(async (req, res) => {
     if (result.done) {
       if (result.appointmentData) {
         await saveAppointment(
-          req.headers["x-api-key"],
+          req.apiKey,
           user_id,
           sessionId,
           result.appointmentData,
@@ -162,7 +162,7 @@ exports.chat = asyncHandler(async (req, res) => {
   try {
     const faqRes = await fetch(
       `${process.env.FAQ_SERVICE_URL}/api/faqs/active`,
-      { headers: { "x-api-key": req.headers["x-api-key"] } },
+      { headers: { "x-api-key": req.apiKey } },
     );
     if (faqRes.ok) {
       const faqData = await faqRes.json();

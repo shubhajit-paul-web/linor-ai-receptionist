@@ -22,6 +22,20 @@ const server = app.listen(PORT, () => {
   logger.info(
     `Appointment Service running in ${process.env.NODE_ENV} mode on port ${PORT}`,
   );
+
+  if (process.env.NODE_ENV === "production" && process.env.SELF_URL) {
+    setInterval(
+      async () => {
+        try {
+          const res = await fetch(`${process.env.SELF_URL}/ping`);
+          logger.info("Keep-alive ping ok: %s", res.status);
+        } catch (err) {
+          logger.warn("Keep-alive ping failed: %s", err.message);
+        }
+      },
+      13 * 60 * 1000,
+    ); // 13 minutes
+  }
 });
 
 // ── Graceful shutdown ──────────────────────────────────────

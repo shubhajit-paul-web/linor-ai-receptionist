@@ -1,9 +1,16 @@
+const crypto = require("crypto");
+
 const asyncHandler = require("../utils/asyncHandler");
 const redis = require("../service/redisClient");
 const logger = require("../utils/logger");
 
+
 const CACHE_TTL = 60 * 60 * 4; // cache clinic data for 4 hours
-const cacheKey  = (apiKey) => `clinic:${apiKey}`;
+// Cache key uses SHA256 of the raw API key — this matches what MongoDB
+// stores, so the Tenant service can compute and delete the exact key
+// when regenerating without needing to know the raw key.
+const hashKey  = (rawKey) => crypto.createHash("sha256").update(rawKey).digest("hex");
+const cacheKey = (apiKey) => `clinic:${hashKey(apiKey)}`;
 
 exports.verifyApiKey = asyncHandler(async (req, res, next) => {
   // Accept the key from either 'x-api-key' or 'Authorization: Bearer <key>'
@@ -21,6 +28,8 @@ exports.verifyApiKey = asyncHandler(async (req, res, next) => {
   if (!apiKey) {
     return res.status(401).json({ success: false, message: "API key missing" });
   }
+
+    req.apiKey = apiKey;
 
   // ── Check Redis cache first ────────────────────────────────
   try {
