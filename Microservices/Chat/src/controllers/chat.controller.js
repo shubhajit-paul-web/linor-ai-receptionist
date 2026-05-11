@@ -32,9 +32,9 @@ exports.chat = asyncHandler(async (req, res) => {
   // New format (current):  { message: string,  sessionId: string,  history: [] }
   // Old format (cached):   { messages: [{role, content}], session_id: string }
 
-  let message   = body.message;
+  let message = body.message;
   let sessionId = body.sessionId || body.session_id;
-  let history   = Array.isArray(body.history) ? body.history : [];
+  let history = Array.isArray(body.history) ? body.history : [];
 
   if (!message && Array.isArray(body.messages) && body.messages.length > 0) {
     // Old format: messages array — extract the last user message as the
@@ -115,6 +115,14 @@ exports.chat = asyncHandler(async (req, res) => {
             suggestions: availableSlots?.slice(0, 4) || [],
           });
         }
+
+        if (saveResult?.error) {
+          return res.json({
+            success: true,
+            reply: `I'm sorry, I couldn't save your appointment: ${saveResult.message}. Please try again or call us.`,
+            suggestions: ["Retry booking"],
+          });
+        }
       }
       return res.json({
         success: true,
@@ -181,7 +189,10 @@ exports.chat = asyncHandler(async (req, res) => {
         );
       }
     } catch (err) {
-      logger.warn("Pinecone query failed — continuing without RAG: %s", err.message);
+      logger.warn(
+        "Pinecone query failed — continuing without RAG: %s",
+        err.message,
+      );
     }
   }
 
@@ -233,7 +244,9 @@ exports.chat = asyncHandler(async (req, res) => {
 
   // Contextual quick replies — drive the next best action without extra tokens.
   const suggestions = aiFailed
-    ? (clinic?.phone ? [`Call ${clinic.phone}`, "Working hours"] : [])
+    ? clinic?.phone
+      ? [`Call ${clinic.phone}`, "Working hours"]
+      : []
     : buildSuggestions({
         intent: isSymptom ? "symptom" : "general",
         clinic,
@@ -271,7 +284,9 @@ exports.requestTransfer = asyncHandler(async (req, res) => {
   const tenantId = req.user_id;
 
   if (!sessionId) {
-    return res.status(400).json({ success: false, message: "sessionId is required" });
+    return res
+      .status(400)
+      .json({ success: false, message: "sessionId is required" });
   }
 
   // Emit real-time event to all agents in tenant room (no database persistence)
@@ -285,7 +300,11 @@ exports.requestTransfer = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info("Human transfer requested for session %s (tenant %s)", sessionId, tenantId);
+  logger.info(
+    "Human transfer requested for session %s (tenant %s)",
+    sessionId,
+    tenantId,
+  );
 
   res.json({
     success: true,
@@ -320,19 +339,32 @@ const saveAppointment = async (apiKey, user_id, sessionId, data) => {
 
     if (!response.ok) {
       let body = {};
-      try { body = await response.json(); } catch { /* ignore parse errors */ }
-      logger.error("Appointment save failed: %s %s", response.status, JSON.stringify(body));
+      try {
+        body = await response.json();
+      } catch {
+        /* ignore parse errors */
+      }
+      logger.error(
+        "Appointment save failed: %s %s",
+        response.status,
+        JSON.stringify(body),
+      );
 
       // 409 Conflict — slot already booked
       if (response.status === 409) {
         return {
           conflict: true,
-          message: body.message || "That slot is already booked. Please choose another time.",
+          message:
+            body.message ||
+            "That slot is already booked. Please choose another time.",
           availableSlots: body.availableSlots || [],
         };
       }
 
-      return { error: true, message: body.message || `HTTP ${response.status}` };
+      return {
+        error: true,
+        message: body.message || `HTTP ${response.status}`,
+      };
     }
 
     const result = await response.json();
