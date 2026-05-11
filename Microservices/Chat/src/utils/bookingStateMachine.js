@@ -9,6 +9,43 @@ const SESSION_TTL = 60 * 30; // 30 minutes
 
 const sessionKey  = (id) => `booking:${id}`;
 
+/**
+ * Normalizes a date string into YYYY-MM-DD.
+ * Handles "today", "tomorrow", and standard date formats.
+ */
+const normalizeDate = (input) => {
+  const now = new Date();
+  const lower = input.toLowerCase().trim();
+
+  let targetDate = new Date();
+
+  if (lower === "today") {
+    targetDate = now;
+  } else if (lower === "tomorrow") {
+    targetDate.setDate(now.getDate() + 1);
+  } else if (lower === "this weekend") {
+    // Sunday of this week (or next if it's already Sunday)
+    const day = now.getDay();
+    const diff = (day === 0 ? 0 : 7 - day);
+    targetDate.setDate(now.getDate() + diff);
+  } else if (lower === "next week") {
+    targetDate.setDate(now.getDate() + 7);
+  } else {
+    // Try to parse as a regular date
+    const parsed = new Date(input);
+    if (!isNaN(parsed.getTime())) {
+      // If no year was provided (e.g. "May 5"), it defaults to current year
+      // but ensure it's not in the past if possible (optional logic)
+      targetDate = parsed;
+    } else {
+      // Fallback: return as-is if we can't parse it (or return null to force retry)
+      return input; 
+    }
+  }
+
+  return targetDate.toISOString().split("T")[0];
+};
+
 const initSession = async (sessionId) => {
   await redis.setex(
     sessionKey(sessionId),
@@ -44,15 +81,40 @@ const handleBookingStep = async (sessionId, userMessage, clinic) => {
   switch (session.step) {
     case "ask_name":
       session.data.patientName = msg;
+      session.step = "ask_phone";
+      await saveSession(sessionId, session);
+      return {
+        reply: `Nice to meet you, ${msg}! May I have your mobile number please?`,
+        done: false,
+      };
+
+    case "ask_phone":
+      // Basic phone validation (at least 10 digits)
+      const phoneClean = msg.replace(/\D/g, "");
+      if (phoneClean.length < 10) {
+        return {
+          reply: `Please provide a valid 10-digit mobile number so we can reach you.`,
+          done: false,
+        };
+      }
+      session.data.phone = msg;
       session.step = "ask_date";
       await saveSession(sessionId, session);
       return {
-        reply: `Nice to meet you, ${msg}! What date would you prefer? (e.g., May 5)`,
+        reply: `Thank you! What date would you prefer for your appointment? (e.g., May 5)`,
         done: false,
       };
 
     case "ask_date":
-      session.data.date = msg;
+      const normalized = normalizeDate(msg);
+      // Check if it's a valid YYYY-MM-DD string
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+        return {
+          reply: `I'm sorry, I didn't quite catch that date. Could you please specify it more clearly? (e.g., "Tomorrow", "May 15", or "2026-05-20")`,
+          done: false,
+        };
+      }
+      session.data.date = normalized;
       session.step = "ask_time";
       await saveSession(sessionId, session);
       return {
@@ -84,7 +146,7 @@ const handleBookingStep = async (sessionId, userMessage, clinic) => {
       await saveSession(sessionId, session);
       const d = session.data;
       return {
-        reply: `To confirm — ${d.patientName}, ${d.service} on ${d.date} at ${d.time}. Shall I book this? (Yes / No)`,
+        reply: `To confirm — ${d.patientName} (${d.phone}), ${d.service} on ${d.date} at ${d.time}. Shall I book this? (Yes / No)`,
         done: false,
       };
 

@@ -101,10 +101,10 @@ const createAppointment = asyncHandler(async (req, res) => {
     req.body;
 
   // Validate required fields
-  if (!patientName || !date || !time || !service) {
+  if (!patientName || !phone || !date || !time || !service) {
     return res.status(400).json({
       success: false,
-      message: "patientName, date, time and service are required",
+      message: "patientName, phone, date, time and service are required",
     });
   }
 
